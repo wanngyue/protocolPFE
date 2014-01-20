@@ -14,15 +14,19 @@
 #define STRING_SIZE		1024
 #define	DELIMITER ' '
 
-typedef struct node_info_t {
-	int self_id;
-	char IP[16];
-	int port;
-} node_info;
+//typedef struct node_info_t {
+//	int self_id;
+//	char IP[16];
+//	int port;
+//} node_info;
 typedef struct config_info_t {
 	int self_id;
-	node_info nodes[MAX_NODES];
+	//node_info nodes[MAX_NODES];
 	int num_nodes;
+	char IP[16];
+	char IP_broadcast[16];
+	int port;
+	int port_broadcast;
 } config_info;
 
 void validate_input_parameters(int argc, char **argv);
@@ -31,7 +35,7 @@ void get_ip_port(const char* config_file, config_info * config);
 void initialize();
 
 config_info *config_sample;
-char * config_file = "config_file.dat";
+char * config_file = "config_file_udp.dat";
 
 int self_id, num_nodes, time_out;
 int interval_preparation, interval_warmingUp, interval_mesure, interval_stop;
@@ -42,7 +46,7 @@ static sem_t my_sem;
 
 int seq_num, ack_num, rev_num, conf_num;
 msg *msg_sample;
-char IP_broadcast[16];
+
 
 int main(int argc, char ** argv) {
 
@@ -127,7 +131,7 @@ void get_ip_port(const char* config_file, config_info * config) {
 	FILE * fp;
 	char line[STRING_SIZE];
 	char word[STRING_SIZE];
-	int last_index = -1, node_counter = 0;
+	int last_index = -1;
 
 	fp = fopen(config_file, "r");
 	assert(fp != NULL);
@@ -136,18 +140,20 @@ void get_ip_port(const char* config_file, config_info * config) {
 			if(line[0] == '#'){
 				continue;
 			}
+			if(line[0] == '%'){
+				last_index = get_substr(0, strlen(line) - 1, line, word);
+				memcpy(config->IP_broadcast, word, strlen(word));
+				last_index = get_substr(last_index + 1, strlen(line) - 1, line, word);
+				config->port_broadcast = atoi(word);
+				continue;
+			}
+			if(line[0] == '0'+config->self_id){
+				last_index = get_substr(0, strlen(line) - 1, line, word);
 
-			last_index = get_substr(0, strlen(line) - 1, line, word);
-			config->nodes[node_counter].self_id = atoi(word);
-			last_index = get_substr(last_index + 1, strlen(line) - 1, line, word);
-			memcpy(config->nodes[node_counter].IP, word, strlen(word));
-			last_index = get_substr(last_index + 1, strlen(line) - 1, line, word);
-			config->nodes[node_counter].port = atoi(word);
-
-			config->nodes[node_counter].socket_broadcast = -1;
-			config->nodes[node_counter].socket_recv = -1
-
-			node_counter++;
+				last_index = get_substr(last_index + 1, strlen(line) - 1, line, word);
+				memcpy(config->IP, word, strlen(word));
+				last_index = get_substr(last_index + 1, strlen(line) - 1, line, word);
+			}
 		}
 	}
 	fclose(fp);
