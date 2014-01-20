@@ -6,7 +6,7 @@
 #include 	<semaphore.h>
 #include 	<sys/types.h>
 #include 	<sys/socket.h>
-//#include	"types.h"
+#include	"types.h"
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -35,9 +35,12 @@ void get_ip_port(const char* config_file, config_info * config);
 //int get_substr(int start_index, int end_index, char * source, char * result_to_return);
 void connect_to_leader(config_info *config);
 void create_tcp_server_socket_for_star(config_info *config);
+void initialize();
+
 void *process_msg (void * arg);
 void *send_msg (void * arg);
 void *deliver_msg (void * arg);
+void broadcastData(config_info *config,int sequence_number,int acknowledge_number, msg *message);
 
 config_info *config_sample;
 char * config_file = "config_file.dat";
@@ -48,6 +51,9 @@ int interval_preparation, interval_warmingUp, interval_mesure, interval_stop;
 pthread_t th1, th2, th3;
 void *ret;
 static sem_t my_sem;
+
+int seq_num, ack_num, rev_num, conf_num;
+msg *msg_sample;
 
 int main(int argc, char ** argv) {
 
@@ -66,6 +72,10 @@ int main(int argc, char ** argv) {
 		printf("\n");
 	}
 	*/
+	void initialize();
+
+	sem_init (&my_sem, 0, 0);
+
 	if (pthread_create (&th1, NULL, process_msg, "1") < 0) {
 		fprintf (stderr, "pthread_create error for thread 1\n");
 		exit (1);
@@ -245,6 +255,17 @@ int create_tcp_client_socket(const char *ip, int port) {
 	return sid;
 }
 
+void initialize(){
+
+	seq_num = 0;
+	ack_num = 0;
+	rev_num = 0;
+	conf_num = 0;
+
+	//TO DO
+
+}
+
 void *process_msg (void * arg){
 //  int i;
 //
@@ -256,22 +277,30 @@ void *process_msg (void * arg){
 	char msg_type;
 
 	while(1){
-		if(config_sample->self_id != 0){
-			status = recv(config_sample->nodes[0].socket_id, &msg_type, sizeof(char), MSG_WAITALL);
-			//printf("msg_type = %c\n",msg_type);
-			assert(status == sizeof(char));
-			if(msg_type == 'y'){
+		//if(config_sample->self_id != 0){
+		status = recv(config_sample->nodes[0].socket_id, &msg_type, sizeof(char), MSG_PEEK);
+		//printf("msg_type = %c\n",msg_type);
+		assert(status == sizeof(char));
+		switch(msg_type){
+			case'y':
 				printf("Preparation is done\n");
-				//sem_post(&my_sem);
-			}else if(msg_type == 'm'){
-
-			}else if(msg_type == 'a'){
-
-			}else if(msg_type == 's'){
+				sem_post(&my_sem);
+				break;
+			case'm':
+				handle_data();
+				break;
+			case'a':
+				handle_ack();
+				break;
+			case's':
 				exit(EXIT_SUCCESS);
+				printf("Message type 'stop' received.%c\n", msg_type);
+				break;
+			default: {
+				printf("Unexpected message type received.%c\n", msg_type);
 			}
-
 		}
+		//}
 	}
 
 	pthread_exit (0);
@@ -283,15 +312,20 @@ void *send_msg (void * arg){
 //    printf ("Thread %s: %d\n", (char*)arg, i);
 //    sleep (1);
 //  }
-	///////////////////////////////
 	if(config_sample->self_id == 0){
 		char yes = 'y';
-		printf("HERE\n");
+		printf("Send OK to proposers\n");
 		send(config_sample->nodes[1].socket_id, &yes, sizeof(char), 0);
 		//send(config_sample->nodes[2].socket_id, &yes, sizeof(char), 0);
+	}else{
+		sem_wait (&my_sem);
+		while(1){
+			seq_num++;
+			broadcastData(config_sample,seq_num, ack_num, msg_sample);
+			sleep(time_out);
+		}
 	}
 
-	///////////////////////////////
 
 	pthread_exit (0);
 }
@@ -302,5 +336,11 @@ void *deliver_msg (void * arg){
 //    printf ("Thread %s: %d\n", (char*)arg, i);
 //    sleep (1);
 //  }
-  pthread_exit (0);
+	/*
+	 * TO DO
+	 */
+	pthread_exit (0);
+}
+void broadcastData(config_info *config,int sequence_number,int acknowledge_number, msg *message){
+
 }

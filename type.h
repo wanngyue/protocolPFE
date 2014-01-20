@@ -12,7 +12,7 @@ typedef struct msg {
 } __attribute__((packed)) msg;
 //------------------------------------------------------------------------------
 typedef struct ack {
-	char type;//'m'
+	char type;//'a'
 	int id_process;
 	int seq;
 	int revNum;
@@ -21,5 +21,5 @@ typedef struct ack {
 //------------------------------------------------------------------------------
 typedef struct ok {
 	char ok;//'y','n'
-}  __attribute__((packed)) ack;
+}  __attribute__((packed)) ok;
 //------------------------------------------------------------------------------
