@@ -1,11 +1,10 @@
-#define MSG_HEADER_SIZE (sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(double))
+#define MSG_HEADER_SIZE (sizeof(char) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(double))
 //------------------------------------------------------------------------------
 typedef struct msg {
 	char type; //'m'
 	int id_process;
 	int len;
 	int seq;
-	int dest;
 	int ack;
 	double startMiliSeconds;
 	char payload[2]; //payload bytes to increase the size of packet.
@@ -20,6 +19,6 @@ typedef struct ack {
 }  __attribute__((packed)) ack;
 //------------------------------------------------------------------------------
 typedef struct ok {
-	char ok;//'y','n'
+	char type;//'y','n'
 }  __attribute__((packed)) ok;
 //------------------------------------------------------------------------------

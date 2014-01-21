@@ -19,28 +19,27 @@ typedef struct node_info_t {
 	int self_id;
 	char IP[16];
 	int port;
-	int socket_id;
 } node_info;
 typedef struct config_info_t {
 	int self_id;
 	node_info nodes[MAX_NODES];
 	int num_nodes;
-	int socket_leader;
+	int self_sid;
+	int successor_sid;
 } config_info;
-
 
 void validate_input_parameters(int argc, char **argv);
 void parse_config_file(int self_id, const char * config_file_name, int num_nodes);
 void get_ip_port(const char* config_file, config_info * config);
-//int get_substr(int start_index, int end_index, char * source, char * result_to_return);
-void connect_to_leader(config_info *config);
-void create_tcp_server_socket_for_star(config_info *config);
+void create_ring();
+void create_tcp_server_socket_for_predecessor();
+void create_tcp_client_socket_for_successor();
 void initialize();
 
 void *process_msg (void * arg);
 void *send_msg (void * arg);
 void *deliver_msg (void * arg);
-void broadcastData(config_info *config,int sequence_number,int acknowledge_number, msg *message);
+void broadcast_msg(config_info *config,int sequence_number,int acknowledge_number, msg *message);
 
 config_info *config_sample;
 char * config_file = "config_file.dat";
@@ -53,7 +52,6 @@ void *ret;
 static sem_t my_sem;
 
 int seq_num, ack_num, rev_num, conf_num;
-msg *msg_sample;
 
 int main(int argc, char ** argv) {
 
@@ -74,8 +72,7 @@ int main(int argc, char ** argv) {
 	*/
 	void initialize();
 
-	sem_init (&my_sem, 0, 0);
-
+	sem_init(&my_sem, 0, 0);
 	if (pthread_create (&th1, NULL, process_msg, "1") < 0) {
 		fprintf (stderr, "pthread_create error for thread 1\n");
 		exit (1);
@@ -95,16 +92,17 @@ int main(int argc, char ** argv) {
 
 	if(config_sample->self_id == 0){
 		sleep(interval_preparation);
-		//broadcast -> OK
+		//send OK to successor to start the test
+		start_leader();
 		sleep(interval_warmingUp);
 		//start timer
 		sleep(interval_mesure);
 		//stop timer
 		sleep(interval_stop);
-		//broadcast -> stop
+		//send NOK to successor to start the test
+		stop_leader();
 	}
 }
-
 void validate_input_parameters(int argc, char **argv) {
 	if (argc != 8) {
 		printf("Incompatible call to this function. Try Again.!\n");
@@ -135,16 +133,8 @@ void parse_config_file(int self_id, const char * config_file_name, int num_nodes
 
 	get_ip_port(config_file_name, config_sample);
 
-
-	/*
-	adjust_position(get_config_info());
-	*/
-	if (config_sample->self_id == 0){
-		create_tcp_server_socket_for_star(config_sample);
-	}else {
-		connect_to_leader(config_sample);
-	}
-
+	create_ring();// create a server and then create a client
+	//printf("create ring ... OK\n");
 }
 
 
@@ -189,43 +179,52 @@ int get_substr(int start_index, int end_index, char * source, char * result_to_r
 	}
 	return i;
 }
-
-void create_tcp_server_socket_for_star(config_info *config) {
+void create_ring(){
+	if(config_sample->self_id != 0){
+		create_tcp_server_socket_for_predecessor();
+		create_tcp_client_socket_for_successor();
+	}else{
+		create_tcp_client_socket_for_successor();
+		create_tcp_server_socket_for_predecessor();
+	}
+}
+void create_tcp_server_socket_for_predecessor() {
 	unsigned int client_addr_len;
-	int sid, e = -1, c_counter = 1, activate = 1;
+	int sid, e = -1, activate = 1;
 	struct sockaddr_in server_addr, client_addr;
-	int expected_num_connections = config->num_nodes;
 	client_addr_len = sizeof(client_addr);
 
 	sid = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(sid, SOL_SOCKET, SO_REUSEADDR, &activate, sizeof(int));
 
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = inet_addr(config->nodes[0].IP);
-	server_addr.sin_port = htons(config->nodes[0].port);
+	server_addr.sin_addr.s_addr = inet_addr(config_sample->nodes[config_sample->self_id].IP);
+	server_addr.sin_port = htons(config_sample->nodes[config_sample->self_id].port);
 
 	e = bind(sid, (struct sockaddr*) &server_addr, sizeof(server_addr));
 	assert(e >= 0);
 
-	e = listen(sid, expected_num_connections);
+	e = listen(sid, 1);
 	assert(e >= 0);
 
-	printf("\nLeader waiting for connection requests from processes on the ring...%d\n", expected_num_connections);
-	while (c_counter < expected_num_connections) {
-		config->nodes[c_counter].socket_id = accept(sid, (struct sockaddr*) &client_addr, &client_addr_len);
-		setsockopt(config->nodes[c_counter].socket_id, SOL_SOCKET, SO_REUSEADDR, &activate, sizeof(int));
+	printf("\nwaiting for connection request from successor...\n");
 
-		while (config->nodes[c_counter].socket_id < 0)
-			config->nodes[c_counter].socket_id = accept(sid, (struct sockaddr*) &client_addr, &client_addr_len);
-		c_counter++;
-		printf("Number of requests received: %d\n", c_counter);
+	config_sample->self_sid = accept(sid, (struct sockaddr*) &client_addr, &client_addr_len);
+	setsockopt(config_sample->self_sid, SOL_SOCKET, SO_REUSEADDR, &activate, sizeof(int));
+
+	while (config_sample->self_sid < 0)
+		config_sample->self_sid = accept(sid, (struct sockaddr*) &client_addr, &client_addr_len);
+}
+void create_tcp_client_socket_for_successor(){
+	int id_succ;
+	if(config_sample->self_id != config_sample->num_nodes - 1){
+		id_succ = config_sample->self_id +1;
+	}else{
+		id_succ = 0;
 	}
+	config_sample->successor_sid = create_tcp_client_socket(config_sample->nodes[id_succ].IP,
+																		config_sample->nodes[id_succ].port);
 }
-
-void connect_to_leader(config_info *config) {
-	config->nodes[0].socket_id = create_tcp_client_socket(config_sample->nodes[0].IP, config_sample->nodes[0].port);
-}
-
 int create_tcp_client_socket(const char *ip, int port) {
 	struct sockaddr_in server_addr;
 	int activate = 1;
@@ -254,7 +253,6 @@ int create_tcp_client_socket(const char *ip, int port) {
 	//setsock_nonblock(sid);
 	return sid;
 }
-
 void initialize(){
 
 	seq_num = 0;
@@ -267,35 +265,33 @@ void initialize(){
 }
 
 void *process_msg (void * arg){
-//  int i;
-//
-//  for (i = 0 ; i < 5 ; i++) {
-//    printf ("Thread %s: %d\n", (char*)arg, i);
-//    sleep (1);
-//  }
 	int status;
 	char msg_type;
 
 	while(1){
 		//if(config_sample->self_id != 0){
-		status = recv(config_sample->nodes[0].socket_id, &msg_type, sizeof(char), MSG_PEEK);
-		//printf("msg_type = %c\n",msg_type);
+		status = recv(config_sample->self_sid, &msg_type, sizeof(char), MSG_PEEK);
 		assert(status == sizeof(char));
 		switch(msg_type){
 			case'y':
-				printf("Preparation is done\n");
+				printf("leader is starting the tests...\n");
 				sem_post(&my_sem);
+				if(config_sample->self_id != (config_sample->num_nodes - 1)){
+					start_leader();
+				}
 				break;
 			case'm':
-				handle_data();
+				handle_msg();
 				break;
 			case'a':
 				handle_ack();
 				break;
 			case's':
+				printf("leader is stopping the tests...\n");
+				if(config_sample->self_id != (config_sample->num_nodes - 1)){
+					stop_leader();
+				}
 				exit(EXIT_SUCCESS);
-				printf("Message type 'stop' received.%c\n", msg_type);
-				break;
 			default: {
 				printf("Unexpected message type received.%c\n", msg_type);
 			}
@@ -306,27 +302,23 @@ void *process_msg (void * arg){
 	pthread_exit (0);
 }
 void *send_msg (void * arg){
-//  int i;
-//
-//  for (i = 0 ; i < 5 ; i++) {
-//    printf ("Thread %s: %d\n", (char*)arg, i);
-//    sleep (1);
-//  }
+
 	if(config_sample->self_id == 0){
-		char yes = 'y';
-		printf("Send OK to proposers\n");
-		send(config_sample->nodes[1].socket_id, &yes, sizeof(char), 0);
-		//send(config_sample->nodes[2].socket_id, &yes, sizeof(char), 0);
+		while(1){
+			seq_num++;
+			broadcast_msg(config_sample,seq_num, ack_num, msg_sample);
+			save_msg_in_vector_No_ack();
+			usleep(time_out);
+		}
 	}else{
 		sem_wait (&my_sem);
 		while(1){
 			seq_num++;
-			broadcastData(config_sample,seq_num, ack_num, msg_sample);
-			sleep(time_out);
+			broadcast_msg(config_sample,seq_num, ack_num, msg_sample);
+			save_msg_in_vector_No_ack();
+			usleep(time_out);
 		}
 	}
-
-
 	pthread_exit (0);
 }
 void *deliver_msg (void * arg){
@@ -336,11 +328,96 @@ void *deliver_msg (void * arg){
 //    printf ("Thread %s: %d\n", (char*)arg, i);
 //    sleep (1);
 //  }
-	/*
-	 * TO DO
-	 */
+
 	pthread_exit (0);
 }
-void broadcastData(config_info *config,int sequence_number,int acknowledge_number, msg *message){
+void broadcast_msg(config_info *config,int sequence_number,int acknowledge_number, msg *message){
+	msg *new_msg = (msg*) malloc(sizeof(msg));
+	new_msg->id_process = config->self_id;
+	new_msg->ack = ack_num;
+	new_msg->seq = seq_num;
+	new_msg->type = 'm';
+	new_msg->len = sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(double);
 
+	int status = send(config->successor_sid, new_msg, sizeof(msg), MSG_WAITALL);
+	assert(status == sizeof(msg));
+}
+void broadcast_ack(config_info *config,int sequence_number,int recv_number, int conf_number){
+	ack *new_ack = (ack*) malloc(sizeof(ack));
+	new_ack->id_process = config->self_id;
+	new_ack->seq = sequence_number;
+	new_ack->revNum = recv_number;
+	new_ack->confNum = conf_number;
+	new_ack->type = 'a';
+
+	int status = send(config->successor_sid, new_ack, sizeof(ack), MSG_WAITALL);
+	assert(status == sizeof(ack));
+}
+void start_leader(){
+	ok *ok_var = (ok*)malloc(sizeof(ok)) ;
+	ok_var->type = 'y';
+	int status = send(config_sample->successor_sid, ok_var, sizeof(ok), MSG_WAITALL);
+	assert(status == sizeof(ok));
+}
+void stop_leader(){
+	ok *ok_var = (ok*)malloc(sizeof(ok)) ;
+	ok_var->type = 'n';
+	int status = send(config_sample->successor_sid, ok_var, sizeof(ok), MSG_WAITALL);
+	assert(status == sizeof(ok));
+}
+void handle_msg(){
+
+	int status, predecessor = 0, pre_predecessor = 0;
+
+	msg recv_msg;
+	int self_id = config_sample->self_id;
+
+	status = recv(config_sample->self_sid, &recv_msg, sizeof(msg), MSG_WAITALL);
+	assert(status == sizeof(msg));
+
+	predecessor = get_predecessot(recv_msg.id_process);
+	pre_predecessor = get_pre_predecessor(recv_msg.id_process);
+
+	if(self_id == 0){
+		save_msg_in_vector_ack();
+		rev_num++;
+		conf_num = confirm_msg();//confirm all the messages whose num < ack_num for id_process
+		update_vector();
+
+		broadcast_ack(config_sample, seq_num, rev_num, conf_num);//!!!!
+	}else{
+		save_msg_in_vector_No_ack();
+	}
+	if (config_sample->self_id != predecessor) {
+
+	} else {
+
+
+	}
+}
+void handle_ack(){
+
+
+
+
+
+}
+int get_predecessot(int p_id) {
+
+	int predecessor;
+	if (p_id == 0)
+		predecessor = config_sample->num_nodes - 1;
+	else
+		predecessor = p_id - 1;
+	return predecessor;
+}
+int get_pre_predecessor(int p_id) {
+	int pre_predecessor;
+	int predecessor = get_predecessot(p_id);
+
+	if (predecessor == 0)
+		pre_predecessor = config_sample->num_nodes - 1;
+	else
+		pre_predecessor = predecessor - 1;
+	return pre_predecessor;
 }
