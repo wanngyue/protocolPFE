@@ -6,10 +6,14 @@
 #include 	<semaphore.h>
 #include 	<sys/types.h>
 #include 	<sys/socket.h>
-#include	"types.h"
+#include 	<stdint.h>
+#include 	<unistd.h>
+#include	"type.h"
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include "vector_tcp.h"
 
 #define MAX_NODES 	5
 #define STRING_SIZE		1024
@@ -27,31 +31,56 @@ typedef struct config_info_t {
 	int self_sid;
 	int successor_sid;
 } config_info;
+typedef struct message_info_t{
+	msg message;
+	int bits;
+} msg_info;
 
 void validate_input_parameters(int argc, char **argv);
 void parse_config_file(int self_id, const char * config_file_name, int num_nodes);
-void get_ip_port(const char* config_file, config_info * config);
+void get_ip_port(const char* config_file1, config_info * config);
 void create_ring();
 void create_tcp_server_socket_for_predecessor();
 void create_tcp_client_socket_for_successor();
 void initialize();
+void start_leader();
+void stop_leader();
+int get_substr(int start_index, int end_index, char * source, char * result_to_return);
+void create_tcp_client_socket_for_successor();
+void handle_msg(config_info *config);
+void handle_ack(config_info * config);
+int get_predecessot(int p_id);
+int get_pre_predecessor(int p_id);
+void create_tcp_client_socket_for_successor();
+int create_tcp_client_socket(const char *ip, int port);
+void update_vector(msg *message);
+int confirm_msg(msg *message);
+void move_msg_in_vector_ack(config_info *config, ack *acknowledge);
+void save_msg_in_vector_ack( msg *message);
 
 void *process_msg (void * arg);
 void *send_msg (void * arg);
 void *deliver_msg (void * arg);
-void broadcast_msg(config_info *config,int sequence_number,int acknowledge_number, msg *message);
+void broadcast_msg(int dest, msg *message);
+msg * prepare_msg(int id,int sequence_number,int acknowledge_number);
+void save_msg_in_vector_No_ack( msg *message);
+void broadcast_ack(int successor_sid,ack *new_ack);
+ack * prepare_ack(int id,int sequence_number,int recv_number, int conf_number);
 
 config_info *config_sample;
-char * config_file = "config_file.dat";
-
+char *config_file = "config_file.dat";
+msg *msg_sample;
 int self_id, num_nodes, time_out;
 int interval_preparation, interval_warmingUp, interval_mesure, interval_stop;
-
+int conf_bits;
 pthread_t th1, th2, th3;
 void *ret;
 static sem_t my_sem;
 
 int seq_num, ack_num, rev_num, conf_num;
+
+vector_ *vector_no_ack[MAX_NODES];
+vector_ *vector_ack;
 
 int main(int argc, char ** argv) {
 
@@ -70,14 +99,12 @@ int main(int argc, char ** argv) {
 		printf("\n");
 	}
 	*/
-	void initialize();
-
+	initialize();
 	sem_init(&my_sem, 0, 0);
 	if (pthread_create (&th1, NULL, process_msg, "1") < 0) {
 		fprintf (stderr, "pthread_create error for thread 1\n");
 		exit (1);
 	}
-
 	if (pthread_create (&th2, NULL, send_msg, "2") < 0) {
 		fprintf (stderr, "pthread_create error for thread 2\n");
 		exit (1);
@@ -86,14 +113,14 @@ int main(int argc, char ** argv) {
 		fprintf (stderr, "pthread_create error for thread 3\n");
 		exit (1);
 	}
-	(void)pthread_join (th1, &ret);
-	(void)pthread_join (th2, &ret);
-	(void)pthread_join (th3, &ret);
 
 	if(config_sample->self_id == 0){
+		printf("sleeping...\n");
 		sleep(interval_preparation);
 		//send OK to successor to start the test
+		printf("message ok is sending\n");
 		start_leader();
+		printf("message ok is sent\n");
 		sleep(interval_warmingUp);
 		//start timer
 		sleep(interval_mesure);
@@ -102,6 +129,11 @@ int main(int argc, char ** argv) {
 		//send NOK to successor to start the test
 		stop_leader();
 	}
+	(void)pthread_join (th1, &ret);
+	//(void)pthread_join (th2, &ret);
+	//(void)pthread_join (th3, &ret);
+	printf("done!\n");
+	return 0;
 }
 void validate_input_parameters(int argc, char **argv) {
 	if (argc != 8) {
@@ -260,38 +292,68 @@ void initialize(){
 	rev_num = 0;
 	conf_num = 0;
 
-	//TO DO
+	switch(config_sample->num_nodes){
+		case 5:
+			conf_bits = 31;
+			break;
+		case 4:
+			conf_bits = 15;
+			break;
+		case 3:
+			conf_bits = 7;
+			break;
+		case 2:
+			conf_bits = 3;
+			break;
+		default:{
+			printf("error in initialize the bits");
+		}
 
+	}
+	int i = 0;
+	for(i = 0;i < config_sample->num_nodes;i++){
+		vector_no_ack[i] = createVector(50);
+	}
+	vector_ack = createVector(50);
 }
-
 void *process_msg (void * arg){
 	int status;
 	char msg_type;
+	int  sign = 1;
+	int started = 0;
 
-	while(1){
+	while(sign){
 		//if(config_sample->self_id != 0){
 		status = recv(config_sample->self_sid, &msg_type, sizeof(char), MSG_PEEK);
+		//printf("msg received...%c\n",msg_type);
 		assert(status == sizeof(char));
 		switch(msg_type){
-			case'y':
-				printf("leader is starting the tests...\n");
-				sem_post(&my_sem);
-				if(config_sample->self_id != (config_sample->num_nodes - 1)){
-					start_leader();
+			case'y':{
+				status = recv(config_sample->self_sid, &msg_type, sizeof(char), MSG_WAITALL);
+				assert(status == sizeof(char));
+				if(!started){
+					printf("leader is starting the tests...\n");
+					if(config_sample->self_id != 0){
+						start_leader();
+					}
+					sem_post(&my_sem);
 				}
+				started = 1;
 				break;
+			}
 			case'm':
-				handle_msg();
+				handle_msg(config_sample);
 				break;
 			case'a':
-				handle_ack();
+				handle_ack(config_sample);
 				break;
-			case's':
+			case'n':
 				printf("leader is stopping the tests...\n");
-				if(config_sample->self_id != (config_sample->num_nodes - 1)){
+				if(config_sample->self_id != 0){
 					stop_leader();
 				}
-				exit(EXIT_SUCCESS);
+				sign = 0;
+				break;
 			default: {
 				printf("Unexpected message type received.%c\n", msg_type);
 			}
@@ -302,55 +364,85 @@ void *process_msg (void * arg){
 	pthread_exit (0);
 }
 void *send_msg (void * arg){
-
+	sem_wait (&my_sem);
+	//printf("sem is unlocked\n");
 	if(config_sample->self_id == 0){
 		while(1){
 			seq_num++;
-			broadcast_msg(config_sample,seq_num, ack_num, msg_sample);
-			save_msg_in_vector_No_ack();
+			msg_sample = prepare_msg(config_sample->self_id, seq_num, ack_num);
+			printf("Broadcast [id=%d seq=%d ack=%d] ->\n",config_sample->self_id,seq_num,ack_num);
+			broadcast_msg(config_sample->successor_sid, msg_sample);
+			//printf("message sent\n");
+			save_msg_in_vector_ack(msg_sample);
+			update_vector(msg_sample);
+			//printf("msg added in vector ack\n");
 			usleep(time_out);
 		}
 	}else{
-		sem_wait (&my_sem);
 		while(1){
 			seq_num++;
-			broadcast_msg(config_sample,seq_num, ack_num, msg_sample);
-			save_msg_in_vector_No_ack();
+			msg_sample = prepare_msg(config_sample->self_id, seq_num, ack_num);
+			printf("Broadcast [id=%d seq=%d ack=%d] ->\n",config_sample->self_id,seq_num,ack_num);
+			broadcast_msg(config_sample->successor_sid, msg_sample);
+			//printf("Sent.\n");
+			save_msg_in_vector_No_ack(msg_sample);
+			//printf("msg added in vector ack\n");
 			usleep(time_out);
 		}
 	}
 	pthread_exit (0);
 }
 void *deliver_msg (void * arg){
-//  int i;
-//
-//  for (i = 0 ; i < 5 ; i++) {
-//    printf ("Thread %s: %d\n", (char*)arg, i);
-//    sleep (1);
-//  }
-
+	/*
+	while(1){
+		if(vector_ack->nbElt != 0){
+			if(((msg_info *)(elementAt(vector_ack->rgFirstElt, vector_ack)))->bits == 0){
+				msg_info *msgInfo = removeFirst(vector_ack);
+				//printf("message is delivered\n");
+				//printf("id_process = %d\n,type = %c\n,seq = %d\n,ack = %d\n", msgInfo->message.id_process,msgInfo->message.type, msgInfo->message.seq, msgInfo->message.ack);
+			}
+		}
+		usleep(100);
+	}
+	*/
 	pthread_exit (0);
 }
-void broadcast_msg(config_info *config,int sequence_number,int acknowledge_number, msg *message){
-	msg *new_msg = (msg*) malloc(sizeof(msg));
-	new_msg->id_process = config->self_id;
-	new_msg->ack = ack_num;
-	new_msg->seq = seq_num;
-	new_msg->type = 'm';
-	new_msg->len = sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(double);
+void broadcast_msg(int dest, msg *message){
 
-	int status = send(config->successor_sid, new_msg, sizeof(msg), MSG_WAITALL);
+	int status = send(dest, message, sizeof(msg), MSG_WAITALL);
 	assert(status == sizeof(msg));
 }
-void broadcast_ack(config_info *config,int sequence_number,int recv_number, int conf_number){
+msg * prepare_msg(int id,int sequence_number,int acknowledge_number){
+	msg *new_msg = (msg*) malloc(sizeof(msg));
+	new_msg->id_process = id;
+	new_msg->ack = acknowledge_number;
+	new_msg->seq = sequence_number;
+	new_msg->type = 'm';
+	new_msg->len = sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(double);
+	return new_msg;
+}
+void broadcast_ack(int successor_sid,ack *new_ack){
+
+	int status = send(successor_sid, new_ack, sizeof(ack), MSG_WAITALL);
+	assert(status == sizeof(ack));
+}
+ack * prepare_ack(int id,int sequence_number,int recv_number, int conf_number){
 	ack *new_ack = (ack*) malloc(sizeof(ack));
-	new_ack->id_process = config->self_id;
+	new_ack->id_process = id;
 	new_ack->seq = sequence_number;
 	new_ack->revNum = recv_number;
 	new_ack->confNum = conf_number;
 	new_ack->type = 'a';
+	return new_ack;
+}
+void transfer_msg(config_info *config, msg *message){
 
-	int status = send(config->successor_sid, new_ack, sizeof(ack), MSG_WAITALL);
+	int status = send(config->successor_sid, message, sizeof(msg), MSG_WAITALL);
+	assert(status == sizeof(msg));
+}
+void transfer_ack(config_info *config, ack *acknowledgge){
+
+	int status = send(config->successor_sid, acknowledgge, sizeof(ack), MSG_WAITALL);
 	assert(status == sizeof(ack));
 }
 void start_leader(){
@@ -365,41 +457,70 @@ void stop_leader(){
 	int status = send(config_sample->successor_sid, ok_var, sizeof(ok), MSG_WAITALL);
 	assert(status == sizeof(ok));
 }
-void handle_msg(){
+void handle_msg(config_info * config){
 
-	int status, predecessor = 0, pre_predecessor = 0;
+	int status, predecessor = 0;
 
 	msg recv_msg;
-	int self_id = config_sample->self_id;
-
-	status = recv(config_sample->self_sid, &recv_msg, sizeof(msg), MSG_WAITALL);
+	int self_id = config->self_id;
+	status = recv(config->self_sid, &recv_msg, sizeof(msg), MSG_WAITALL);
+	printf("<- recv [id=%d seq=%d ack=%d]\n", recv_msg.id_process, recv_msg.seq, recv_msg.ack);
 	assert(status == sizeof(msg));
-
 	predecessor = get_predecessot(recv_msg.id_process);
-	pre_predecessor = get_pre_predecessor(recv_msg.id_process);
-
+	msg *new_msg = (msg*) malloc(sizeof(msg));
+	memcpy(new_msg, &recv_msg, sizeof(msg));
 	if(self_id == 0){
-		save_msg_in_vector_ack();
+		//printf("save msg ack\n");
+		save_msg_in_vector_ack(new_msg);
+		//printf("update\n");
+		update_vector(new_msg);
 		rev_num++;
-		conf_num = confirm_msg();//confirm all the messages whose num < ack_num for id_process
-		update_vector();
-
-		broadcast_ack(config_sample, seq_num, rev_num, conf_num);//!!!!
+		conf_num = confirm_msg(new_msg);//confirm all the messages whose num < ack_num for id_process
+		//printf("confirm\n");
+		ack *ack_new = prepare_ack(config->self_id, seq_num, rev_num, conf_num);
+		broadcast_ack(config->successor_sid, ack_new);
+		printf("Ack  [id=%d seq=%d rev=%d conf=%d] ->\n",ack_new->id_process, ack_new->seq, ack_new->revNum, ack_new->confNum);
 	}else{
-		save_msg_in_vector_No_ack();
+		save_msg_in_vector_No_ack(new_msg);
 	}
-	if (config_sample->self_id != predecessor) {
-
-	} else {
-
-
+	if (config->self_id != predecessor) {
+		printf("Broadcast  [id=%d seq=%d ack=%d] ->\n", new_msg->id_process, new_msg->seq, new_msg->ack);
+		transfer_msg(config,new_msg);
 	}
 }
-void handle_ack(){
+void handle_ack(config_info * config){
+
+	int status, predecessor = 0;//, pre_predecessor = 0;
+
+	ack recv_ack;
+	int self_id = config->self_id;
+	//printf("recving\n");
+	status = recv(config->self_sid, &recv_ack, sizeof(ack), MSG_WAITALL);
+	assert(status == sizeof(ack));
+	printf("<- recv_ack [id=%d seq=%d rev=%d conf=%d] ->\n",recv_ack.id_process, recv_ack.seq, recv_ack.revNum, recv_ack.confNum);
+	//printf("recv_ack = %d\n", recv_ack.id_process);
+	predecessor = get_predecessot(recv_ack.id_process);
+	//pre_predecessor = get_pre_predecessor(recv_ack->id_process);
+	ack *new_ack = (ack*) malloc(sizeof(ack));
+	memcpy(new_ack, &recv_ack, sizeof(ack));
+	if(self_id == 0){
 
 
-
-
+		//!!!! maybe -> try_deliver();
+	}else{
+		//printf("moving\n");
+		move_msg_in_vector_ack(config,new_ack);
+		//printf("moved\n");
+		//try_deliver();
+		ack_num++;
+		if (config_sample->self_id != predecessor) {
+			//printf("transferring\n");
+			printf("transferAck\n");
+				transfer_ack(config,new_ack);
+				printf("Ack_t  [id=%d seq=%d rev=%d conf=%d] ->\n",new_ack->id_process, new_ack->seq, new_ack->revNum, new_ack->confNum);
+			//printf("transferred\n");
+		}
+	}
 
 }
 int get_predecessot(int p_id) {
@@ -420,4 +541,80 @@ int get_pre_predecessor(int p_id) {
 	else
 		pre_predecessor = predecessor - 1;
 	return pre_predecessor;
+}
+void save_msg_in_vector_ack( msg *message){
+	msg_info *msg_inf = NULL;
+	msg_inf = (msg_info *)malloc(sizeof(msg_info));
+	//sg_inf->message = *message;
+	memcpy( &(msg_inf->message), message, sizeof(void *));
+	msg_inf->bits = conf_bits;//001111
+
+	int status;
+	//printf("elt addingin vector ack \n");
+	status = addElt(msg_inf, vector_ack);
+	//printf("elt added in vector ack\n");
+	assert(status == 1);
+
+}
+void move_msg_in_vector_ack(config_info *config, ack *acknowledge){
+	int message_id = acknowledge->id_process;
+	int message_seq = acknowledge->seq;
+	int message_recv = acknowledge->revNum;
+	msg_info *msg_inf = NULL;
+	msg_inf = (msg_info *)malloc(sizeof(msg_info));
+	//msg_inf->message = elementAt(message_seq, vector_no_ack[message_id]);
+	//printf("rgFirstElt = %d\n",vector_no_ack[message_id]->rgFirstElt);
+	memcpy(&(msg_inf->message), elementAt(message_seq - 1, vector_no_ack[message_id]), sizeof(void *));
+	//printf("memcpyed\n");
+	msg_inf->bits = conf_bits;//001111
+	int i = vector_no_ack[message_id]->rgFirstElt;
+
+	if(message_recv == i+1){
+		int status;
+		status = addElt(msg_inf, vector_ack);
+		assert(status == 1);
+	}else{
+
+	}
+}
+void save_msg_in_vector_No_ack( msg *message){
+	int message_id = message->id_process;
+	msg *mess = NULL;
+	mess = (msg *)malloc(sizeof(msg));
+	mess = message;
+
+	int status;
+	//printf("elt adding in vector no ack  %d\n",message_id);
+	status = addElt(mess, vector_no_ack[message_id]);
+	//printf("elt added in vector no ack\n");
+	assert(status == 1);
+}
+int confirm_msg(msg *message){
+
+	//int id = message->id_process;
+	int ack_tmp = message->ack;
+	int elt_tmp = vector_ack->rgFirstElt;
+
+	while(elt_tmp <= ack_tmp){
+
+		if(((msg_info *)(elementAt(elt_tmp, vector_ack)))->bits == 0){
+			elt_tmp++;
+		}else {
+			if(elt_tmp > 0)
+				elt_tmp--;
+			break;
+		}
+	}
+	return elt_tmp;
+}
+void update_vector(msg *message){
+	//printf("up \n");
+	int id = message->id_process;
+	int ack_tmp = message->ack;
+	int elt_tmp = vector_ack->rgFirstElt;
+	while( elt_tmp <= ack_tmp){
+		//printf("manip (%d,%d)",elt_tmp,( (msg_info *)   (elementAt(elt_tmp, vector_ack)) )->message.seq);
+		( (msg_info *)   (elementAt(elt_tmp, vector_ack)) )->bits &= ~(1 << id);
+		elt_tmp++;
+	}
 }
