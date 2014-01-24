@@ -1,24 +1,32 @@
-#define MSG_HEADER_SIZE (sizeof(char) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(int) + sizeof(double))
 //------------------------------------------------------------------------------
-typedef struct msg {
-	char type; //'m'
-	int id_process;
+typedef short typId;
+
+typedef struct bcast_t {
 	int len;
+	char type; //'m'
+	typId id_process;
 	int seq;
 	int ack;
 	double startMiliSeconds;
 	char payload[2]; //payload bytes to increase the size of packet.
-} __attribute__((packed)) msg;
+} __attribute__((packed)) bcast;
 //------------------------------------------------------------------------------
-typedef struct ack {
+typedef struct ack_t {
+	int len;
 	char type;//'a'
-	int id_process;
+	typId id_process;
 	int seq;
 	int revNum;
-	int confNum;
 }  __attribute__((packed)) ack;
 //------------------------------------------------------------------------------
-typedef struct ok {
+typedef struct ok_t {
+	int len;
 	char type;//'y','n'
 }  __attribute__((packed)) ok;
+//------------------------------------------------------------------------------
+typedef union {
+	bcast b;
+	ack   a;
+	ok    o;
+} msg;
 //------------------------------------------------------------------------------
