@@ -48,6 +48,8 @@ typedef struct message_info_t{
 typedef struct counters_t {
 	long messages_delivered;
 	long messages_bytes_delivered;
+	long messages_delivered_mesure;
+	long messages_bytes_delivered_mesure;
 	double delivered_latency;
 }counters;
 
@@ -88,7 +90,7 @@ char *config_file = "config_file.dat";
 typId self_id;
 int num_nodes, time_out;
 int interval_preparation, interval_warmingUp, interval_mesure, interval_stop, total_size;
-int conf_bits;
+int conf_bits = 0;
 pthread_t th1, th2, th3;
 void *ret;
 static sem_t my_sem;
@@ -156,8 +158,8 @@ int main(int argc, char ** argv) {
 	if(config_sample->self_id == 0){
 		printf("==============================\n");
 		printf("TOTAL_TIME_MESUREMENT(ms): %f\n", measure_time_difference(timeEnd, timeBegin));
-		printf("MESSAGES_DELIVERED: %ld\nBYTES_DELIVERED: %ld\nDELIVERED_LATENCY(ms): %f\n", counters_sample.messages_delivered, counters_sample.messages_bytes_delivered, counters_sample.delivered_latency/counters_sample.messages_delivered);
-		printf("THROUGHPUT: %f(Mbps)\n",calculate_throughput(counters_sample.messages_bytes_delivered, measure_time_difference(timeEnd, timeBegin)));
+		printf("MESSAGES_DELIVERED: %ld\nBYTES_DELIVERED: %ld\nDELIVERED_LATENCY(ms): %f\n", counters_sample.messages_delivered_mesure, counters_sample.messages_bytes_delivered_mesure, counters_sample.delivered_latency/counters_sample.messages_delivered_mesure);
+		printf("THROUGHPUT: %f(Mbps)\n",calculate_throughput(counters_sample.messages_bytes_delivered_mesure, measure_time_difference(timeEnd, timeBegin)));
 	}
 	return 0;
 }
@@ -184,7 +186,6 @@ void validate_input_parameters(int argc, char **argv) {
 		total_size = atoi(argv[8]);
 	}
 }
-
 
 void parse_config_file(typId self_id, const char * config_file_name, int num_nodes) {
 	config_sample = (config_info*) malloc(sizeof(config_info));
@@ -351,6 +352,8 @@ void initialize(){
 	counters_sample.delivered_latency = 0;
 	counters_sample.messages_bytes_delivered = 0;
 	counters_sample.messages_delivered = 0;
+	counters_sample.messages_bytes_delivered_mesure = 0;
+	counters_sample.messages_delivered_mesure = 0;
 	deliveryQueue = newBqueue();
 }
 void *process_msg (void * arg){
@@ -423,17 +426,12 @@ void *send_msg (void * arg){
 		if(config_sample->self_id == 0){
 			save_msg_in_vector_ack(msg_sample);
 			update_vector(msg_sample);
-			// Begin MAJ MSC
-			//handle_msg(msg_sample);
-			// End MAJ MSC
-			//rev_num++;
 			ack_num++;
 			ack *ack_new = prepare_ack(msg_sample->id_process, msg_sample->seq, ack_num);
 			broadcast_ack(config_sample->successor_sid, ack_new);
 			#ifdef TRACES
 				printf("Ack  [id=%d seq=%d rev=%d] ->\n",ack_new->id_process, ack_new->seq, ack_new->revNum);
 			#endif
-
 
 		} else {
 			save_msg_in_vector_No_ack(msg_sample);
@@ -443,12 +441,13 @@ void *send_msg (void * arg){
 	pthread_exit (0);
 }
 void *deliver_msg (void * arg){
+	int c_t = 0;
 	while(1){
+		c_t++;
 		msg_info *m = (msg_info *)bqueueDequeue(deliveryQueue);
 	#ifdef TRACES
-		printf("Delivery <message N°%d from processus %d>\n", m->message->seq, m->message->id_process);
+		printf("Delivery <message N°%d from processus %d>%d\n", m->message->seq, m->message->id_process,c_t);
 	#endif
-
 	if(mesurement_started){
 
 	  // Begin MAJ MSC
@@ -457,6 +456,8 @@ void *deliver_msg (void * arg){
 	    // ==> We can compare our clock and the clock stored in the message
 	    double lat = get_mili_seconds() - m->message->startMiliSeconds;
 	    counters_sample.delivered_latency += lat;
+	    counters_sample.messages_delivered_mesure++;
+	   	counters_sample.messages_bytes_delivered_mesure += m->message->len - len_head_bcast;
 	  }
 	  // End MAJ MSC
 	  counters_sample.messages_delivered++;
@@ -530,7 +531,6 @@ void handle_msg(config_info * config, bcast *recv_msg){
 
 	int predecessor;
 	int self_id = config->self_id;
-
 	#ifdef TRACES
 	printf("<- recv [id=%d seq=%d ack=%d]\n", recv_msg->id_process, recv_msg->seq, recv_msg->ack);
 	#endif
@@ -562,11 +562,9 @@ void handle_msg(config_info * config, bcast *recv_msg){
 void handle_ack(config_info * config, ack *recv_ack){
 
 	typId self_id = config->self_id;
-	//printf("recving\n");
 	#ifdef TRACES
 	printf("<- recv_ack [id=%d seq=%d rev=%d] ->\n",recv_ack->id_process, recv_ack->seq, recv_ack->revNum);
 	#endif
-	//printf("recv_ack = %d\n", recv_ack.id_process);
 	if(self_id != 0){
 		// Only a non-leader has to do something
 		move_msg_in_vector_ack(config, recv_ack);
@@ -651,7 +649,9 @@ void update_vector(bcast *message){
 		}
 	}
 	// End MAJ MSC
-	while (numberOfElt(vector_ack)>0 && ((msg_info *)(elementAt(0, vector_ack)))->bits == 0) {
+	//printf("nbElt = %d\n",vector_ack->nbElt);
+	//printf("%d\n",((msg_info *)(elementAt(0, vector_ack)))->bits);
+	while (numberOfElt(vector_ack)>0 && (((msg_info *)(elementAt(0, vector_ack)))->bits == 0)) {
 	  msg_info *m = removeFirst(vector_ack);
 	  //double lat = get_mili_seconds() - m->message->startMiliSeconds;
 	  //printf("NbElet / Latency = %d / %g\n", numberOfElt(vector_ack), lat);
