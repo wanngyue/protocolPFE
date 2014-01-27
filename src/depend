@@ -1,0 +1,411 @@
+# DO NOT DELETE
+
+advanced_struct.o: /usr/include/stdlib.h /usr/include/features.h
+advanced_struct.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+advanced_struct.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+advanced_struct.o: /usr/include/bits/waitflags.h
+advanced_struct.o: /usr/include/bits/waitstatus.h /usr/include/endian.h
+advanced_struct.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+advanced_struct.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+advanced_struct.o: /usr/include/bits/byteswap-16.h /usr/include/xlocale.h
+advanced_struct.o: /usr/include/sys/types.h /usr/include/time.h
+advanced_struct.o: /usr/include/sys/select.h /usr/include/bits/select.h
+advanced_struct.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+advanced_struct.o: /usr/include/sys/sysmacros.h
+advanced_struct.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+advanced_struct.o: /usr/include/bits/stdlib-float.h /usr/include/stdio.h
+advanced_struct.o: /usr/include/libio.h /usr/include/_G_config.h
+advanced_struct.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+advanced_struct.o: /usr/include/bits/sys_errlist.h /usr/include/pthread.h
+advanced_struct.o: /usr/include/sched.h /usr/include/bits/sched.h
+advanced_struct.o: /usr/include/bits/setjmp.h ../include/advanced_struct.h
+advanced_struct.o: ../include/msg.h /usr/include/assert.h
+advanced_struct.o: ../include/address.h ../include/common.h
+advanced_struct.o: /usr/include/error.h ../include/wagon.h
+advanced_struct.o: ../include/applicationMessage.h ../include/bqueue.h
+advanced_struct.o: /usr/include/semaphore.h /usr/include/bits/semaphore.h
+advanced_struct.o: ../include/list.h ../include/trains.h
+interface.o: /usr/include/stdlib.h /usr/include/features.h
+interface.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+interface.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+interface.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+interface.o: /usr/include/endian.h /usr/include/bits/endian.h
+interface.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+interface.o: /usr/include/bits/typesizes.h /usr/include/bits/byteswap-16.h
+interface.o: /usr/include/xlocale.h /usr/include/sys/types.h
+interface.o: /usr/include/time.h /usr/include/sys/select.h
+interface.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+interface.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+interface.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+interface.o: /usr/include/bits/stdlib-float.h /usr/include/stdio.h
+interface.o: /usr/include/libio.h /usr/include/_G_config.h
+interface.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+interface.o: /usr/include/bits/sys_errlist.h /usr/include/pthread.h
+interface.o: /usr/include/sched.h /usr/include/bits/sched.h
+interface.o: /usr/include/bits/setjmp.h /usr/include/errno.h
+interface.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+interface.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
+interface.o: /usr/include/asm-generic/errno-base.h /usr/include/error.h
+interface.o: ../include/interface.h /usr/include/semaphore.h
+interface.o: /usr/include/bits/semaphore.h ../include/management_addr.h
+interface.o: ../include/comm.h /usr/include/sys/uio.h /usr/include/bits/uio.h
+interface.o: ../include/common.h ../include/trains.h ../include/address.h
+interface.o: ../include/applicationMessage.h ../include/iomsg.h
+interface.o: ../include/msg.h /usr/include/assert.h ../include/wagon.h
+interface.o: ../include/bqueue.h ../include/list.h
+interface.o: ../include/advanced_struct.h ../include/connect.h
+interface.o: ../include/stateMachine.h /usr/include/unistd.h
+interface.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+interface.o: /usr/include/bits/confname.h /usr/include/getopt.h
+interface.o: ../include/signalArrival.h
+connect.o: /usr/include/stdlib.h /usr/include/features.h
+connect.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+connect.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+connect.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+connect.o: /usr/include/endian.h /usr/include/bits/endian.h
+connect.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+connect.o: /usr/include/bits/typesizes.h /usr/include/bits/byteswap-16.h
+connect.o: /usr/include/xlocale.h /usr/include/sys/types.h
+connect.o: /usr/include/time.h /usr/include/sys/select.h
+connect.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+connect.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+connect.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+connect.o: /usr/include/bits/stdlib-float.h /usr/include/pthread.h
+connect.o: /usr/include/sched.h /usr/include/bits/sched.h
+connect.o: /usr/include/bits/setjmp.h ../include/connect.h
+connect.o: ../include/address.h ../include/common.h /usr/include/error.h
+connect.o: ../include/management_addr.h ../include/comm.h
+connect.o: /usr/include/sys/uio.h /usr/include/bits/uio.h ../include/trains.h
+connect.o: ../include/applicationMessage.h ../include/bqueue.h
+connect.o: /usr/include/semaphore.h /usr/include/bits/semaphore.h
+connect.o: ../include/list.h ../include/advanced_struct.h ../include/msg.h
+connect.o: /usr/include/assert.h ../include/wagon.h ../include/iomsg.h
+connect.o: ../include/stateMachine.h /usr/include/errno.h
+connect.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+connect.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
+connect.o: /usr/include/asm-generic/errno-base.h /usr/include/unistd.h
+connect.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+connect.o: /usr/include/bits/confname.h /usr/include/getopt.h
+connect.o: ../include/signalArrival.h ../include/counter.h
+applicationMessage.o: /usr/include/string.h /usr/include/features.h
+applicationMessage.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+applicationMessage.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+applicationMessage.o: /usr/include/xlocale.h /usr/include/stdio.h
+applicationMessage.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+applicationMessage.o: /usr/include/libio.h /usr/include/_G_config.h
+applicationMessage.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+applicationMessage.o: /usr/include/bits/sys_errlist.h
+applicationMessage.o: ../include/applicationMessage.h ../include/address.h
+applicationMessage.o: ../include/common.h /usr/include/stdlib.h
+applicationMessage.o: /usr/include/bits/waitflags.h
+applicationMessage.o: /usr/include/bits/waitstatus.h /usr/include/endian.h
+applicationMessage.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+applicationMessage.o: /usr/include/bits/byteswap-16.h
+applicationMessage.o: /usr/include/sys/types.h /usr/include/time.h
+applicationMessage.o: /usr/include/sys/select.h /usr/include/bits/select.h
+applicationMessage.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+applicationMessage.o: /usr/include/sys/sysmacros.h
+applicationMessage.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+applicationMessage.o: /usr/include/bits/stdlib-float.h /usr/include/pthread.h
+applicationMessage.o: /usr/include/sched.h /usr/include/bits/sched.h
+applicationMessage.o: /usr/include/bits/setjmp.h /usr/include/error.h
+applicationMessage.o: ../include/trains.h ../include/wagon.h
+applicationMessage.o: ../include/bqueue.h /usr/include/semaphore.h
+applicationMessage.o: /usr/include/bits/semaphore.h ../include/list.h
+applicationMessage.o: ../include/msg.h /usr/include/assert.h
+applicationMessage.o: ../include/advanced_struct.h ../include/counter.h
+applicationMessage.o: ../include/stateMachine.h /usr/include/errno.h
+applicationMessage.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+applicationMessage.o: /usr/include/asm/errno.h
+applicationMessage.o: /usr/include/asm-generic/errno.h
+applicationMessage.o: /usr/include/asm-generic/errno-base.h
+applicationMessage.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+applicationMessage.o: /usr/include/bits/environments.h
+applicationMessage.o: /usr/include/bits/confname.h /usr/include/getopt.h
+applicationMessage.o: ../include/iomsg.h ../include/management_addr.h
+applicationMessage.o: ../include/comm.h /usr/include/sys/uio.h
+applicationMessage.o: /usr/include/bits/uio.h ../include/connect.h
+applicationMessage.o: ../include/signalArrival.h
+comm.o: /usr/include/error.h /usr/include/features.h
+comm.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+comm.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+comm.o: /usr/include/assert.h /usr/include/stdlib.h
+comm.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+comm.o: /usr/include/endian.h /usr/include/bits/endian.h
+comm.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+comm.o: /usr/include/bits/typesizes.h /usr/include/bits/byteswap-16.h
+comm.o: /usr/include/xlocale.h /usr/include/sys/types.h /usr/include/time.h
+comm.o: /usr/include/sys/select.h /usr/include/bits/select.h
+comm.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+comm.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+comm.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+comm.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+comm.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
+comm.o: /usr/include/getopt.h /usr/include/string.h /usr/include/errno.h
+comm.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+comm.o: /usr/include/asm/errno.h /usr/include/asm-generic/errno.h
+comm.o: /usr/include/asm-generic/errno-base.h /usr/include/sys/socket.h
+comm.o: /usr/include/sys/uio.h /usr/include/bits/uio.h
+comm.o: /usr/include/bits/socket.h /usr/include/bits/socket_type.h
+comm.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
+comm.o: /usr/include/asm-generic/socket.h /usr/include/asm/sockios.h
+comm.o: /usr/include/asm-generic/sockios.h /usr/include/netdb.h
+comm.o: /usr/include/netinet/in.h /usr/include/stdint.h
+comm.o: /usr/include/bits/wchar.h /usr/include/bits/in.h
+comm.o: /usr/include/rpc/netdb.h /usr/include/bits/siginfo.h
+comm.o: /usr/include/bits/netdb.h /usr/include/netinet/tcp.h
+comm.o: /usr/include/sys/time.h /usr/include/stdio.h /usr/include/libio.h
+comm.o: /usr/include/_G_config.h /usr/include/wchar.h
+comm.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+comm.o: ../include/comm.h /usr/include/pthread.h /usr/include/sched.h
+comm.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+comm.o: ../include/common.h ../include/signalMgt.h /usr/include/signal.h
+comm.o: /usr/include/bits/signum.h /usr/include/bits/sigaction.h
+comm.o: /usr/include/bits/sigcontext.h /usr/include/bits/sigstack.h
+comm.o: /usr/include/sys/ucontext.h /usr/include/bits/sigthread.h
+comm.o: ../include/counter.h
+list.o: /usr/include/error.h /usr/include/features.h
+list.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+list.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+list.o: /usr/include/assert.h /usr/include/stdlib.h
+list.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+list.o: /usr/include/endian.h /usr/include/bits/endian.h
+list.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+list.o: /usr/include/bits/typesizes.h /usr/include/bits/byteswap-16.h
+list.o: /usr/include/xlocale.h /usr/include/sys/types.h /usr/include/time.h
+list.o: /usr/include/sys/select.h /usr/include/bits/select.h
+list.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+list.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+list.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+list.o: ../include/list.h /usr/include/pthread.h /usr/include/sched.h
+list.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+list.o: ../include/common.h
+wagon.o: /usr/include/stdlib.h /usr/include/features.h
+wagon.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+wagon.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+wagon.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+wagon.o: /usr/include/endian.h /usr/include/bits/endian.h
+wagon.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+wagon.o: /usr/include/bits/typesizes.h /usr/include/bits/byteswap-16.h
+wagon.o: /usr/include/xlocale.h /usr/include/sys/types.h /usr/include/time.h
+wagon.o: /usr/include/sys/select.h /usr/include/bits/select.h
+wagon.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+wagon.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+wagon.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+wagon.o: /usr/include/pthread.h /usr/include/sched.h
+wagon.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+wagon.o: /usr/include/assert.h ../include/bqueue.h /usr/include/semaphore.h
+wagon.o: /usr/include/bits/semaphore.h ../include/list.h ../include/wagon.h
+wagon.o: ../include/address.h ../include/common.h /usr/include/error.h
+wagon.o: ../include/applicationMessage.h
+msg.o: /usr/include/stdlib.h /usr/include/features.h
+msg.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+msg.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+msg.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+msg.o: /usr/include/endian.h /usr/include/bits/endian.h
+msg.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+msg.o: /usr/include/bits/typesizes.h /usr/include/bits/byteswap-16.h
+msg.o: /usr/include/xlocale.h /usr/include/sys/types.h /usr/include/time.h
+msg.o: /usr/include/sys/select.h /usr/include/bits/select.h
+msg.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+msg.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+msg.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+msg.o: /usr/include/stdio.h /usr/include/libio.h /usr/include/_G_config.h
+msg.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+msg.o: /usr/include/bits/sys_errlist.h /usr/include/pthread.h
+msg.o: /usr/include/sched.h /usr/include/bits/sched.h
+msg.o: /usr/include/bits/setjmp.h ../include/msg.h /usr/include/assert.h
+msg.o: ../include/address.h ../include/common.h /usr/include/error.h
+msg.o: ../include/wagon.h ../include/applicationMessage.h ../include/bqueue.h
+msg.o: /usr/include/semaphore.h /usr/include/bits/semaphore.h
+msg.o: ../include/list.h ../include/trains.h
+address.o: /usr/include/stdio.h /usr/include/features.h
+address.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+address.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+address.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+address.o: /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h
+address.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+address.o: ../include/address.h ../include/common.h /usr/include/stdlib.h
+address.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+address.o: /usr/include/endian.h /usr/include/bits/endian.h
+address.o: /usr/include/bits/byteswap.h /usr/include/bits/byteswap-16.h
+address.o: /usr/include/xlocale.h /usr/include/sys/types.h
+address.o: /usr/include/time.h /usr/include/sys/select.h
+address.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+address.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+address.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+address.o: /usr/include/bits/stdlib-float.h /usr/include/pthread.h
+address.o: /usr/include/sched.h /usr/include/bits/sched.h
+address.o: /usr/include/bits/setjmp.h /usr/include/error.h
+address.o: ../include/management_addr.h ../include/comm.h
+address.o: /usr/include/sys/uio.h /usr/include/bits/uio.h ../include/trains.h
+address.o: ../include/applicationMessage.h
+signalArrival.o: /usr/include/stdlib.h /usr/include/features.h
+signalArrival.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+signalArrival.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+signalArrival.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+signalArrival.o: /usr/include/endian.h /usr/include/bits/endian.h
+signalArrival.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+signalArrival.o: /usr/include/bits/typesizes.h
+signalArrival.o: /usr/include/bits/byteswap-16.h /usr/include/xlocale.h
+signalArrival.o: /usr/include/sys/types.h /usr/include/time.h
+signalArrival.o: /usr/include/sys/select.h /usr/include/bits/select.h
+signalArrival.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+signalArrival.o: /usr/include/sys/sysmacros.h
+signalArrival.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+signalArrival.o: /usr/include/bits/stdlib-float.h /usr/include/pthread.h
+signalArrival.o: /usr/include/sched.h /usr/include/bits/sched.h
+signalArrival.o: /usr/include/bits/setjmp.h /usr/include/assert.h
+signalArrival.o: ../include/signalArrival.h ../include/advanced_struct.h
+signalArrival.o: ../include/msg.h ../include/address.h ../include/common.h
+signalArrival.o: /usr/include/error.h ../include/wagon.h
+signalArrival.o: ../include/applicationMessage.h ../include/bqueue.h
+signalArrival.o: /usr/include/semaphore.h /usr/include/bits/semaphore.h
+signalArrival.o: ../include/list.h ../include/trains.h
+counter.o: ../include/counter.h
+signalMgt.o: /usr/include/stdio.h /usr/include/features.h
+signalMgt.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+signalMgt.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+signalMgt.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+signalMgt.o: /usr/include/libio.h /usr/include/_G_config.h
+signalMgt.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+signalMgt.o: /usr/include/bits/sys_errlist.h /usr/include/stdlib.h
+signalMgt.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+signalMgt.o: /usr/include/endian.h /usr/include/bits/endian.h
+signalMgt.o: /usr/include/bits/byteswap.h /usr/include/bits/byteswap-16.h
+signalMgt.o: /usr/include/xlocale.h /usr/include/sys/types.h
+signalMgt.o: /usr/include/time.h /usr/include/sys/select.h
+signalMgt.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+signalMgt.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+signalMgt.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+signalMgt.o: /usr/include/bits/stdlib-float.h /usr/include/error.h
+signalMgt.o: /usr/include/errno.h /usr/include/bits/errno.h
+signalMgt.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+signalMgt.o: /usr/include/asm-generic/errno.h
+signalMgt.o: /usr/include/asm-generic/errno-base.h /usr/include/pthread.h
+signalMgt.o: /usr/include/sched.h /usr/include/bits/sched.h
+signalMgt.o: /usr/include/bits/setjmp.h /usr/include/unistd.h
+signalMgt.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+signalMgt.o: /usr/include/bits/confname.h /usr/include/getopt.h
+signalMgt.o: /usr/include/sys/syscall.h /usr/include/asm/unistd.h
+signalMgt.o: /usr/include/asm/unistd_64.h /usr/include/bits/syscall.h
+signalMgt.o: ../include/signalMgt.h /usr/include/signal.h
+signalMgt.o: /usr/include/bits/signum.h /usr/include/bits/siginfo.h
+signalMgt.o: /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h
+signalMgt.o: /usr/include/bits/sigstack.h /usr/include/sys/ucontext.h
+signalMgt.o: /usr/include/bits/sigthread.h ../include/common.h
+bqueue.o: /usr/include/error.h /usr/include/features.h
+bqueue.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+bqueue.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+bqueue.o: /usr/include/errno.h /usr/include/bits/errno.h
+bqueue.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+bqueue.o: /usr/include/asm-generic/errno.h
+bqueue.o: /usr/include/asm-generic/errno-base.h /usr/include/assert.h
+bqueue.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
+bqueue.o: /usr/include/bits/waitstatus.h /usr/include/endian.h
+bqueue.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+bqueue.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+bqueue.o: /usr/include/bits/byteswap-16.h /usr/include/xlocale.h
+bqueue.o: /usr/include/sys/types.h /usr/include/time.h
+bqueue.o: /usr/include/sys/select.h /usr/include/bits/select.h
+bqueue.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+bqueue.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+bqueue.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+bqueue.o: ../include/bqueue.h /usr/include/semaphore.h
+bqueue.o: /usr/include/bits/semaphore.h ../include/list.h
+bqueue.o: /usr/include/pthread.h /usr/include/sched.h
+bqueue.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+iomsg.o: /usr/include/stdlib.h /usr/include/features.h
+iomsg.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+iomsg.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+iomsg.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+iomsg.o: /usr/include/endian.h /usr/include/bits/endian.h
+iomsg.o: /usr/include/bits/byteswap.h /usr/include/bits/types.h
+iomsg.o: /usr/include/bits/typesizes.h /usr/include/bits/byteswap-16.h
+iomsg.o: /usr/include/xlocale.h /usr/include/sys/types.h /usr/include/time.h
+iomsg.o: /usr/include/sys/select.h /usr/include/bits/select.h
+iomsg.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+iomsg.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+iomsg.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+iomsg.o: /usr/include/stdio.h /usr/include/libio.h /usr/include/_G_config.h
+iomsg.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+iomsg.o: /usr/include/bits/sys_errlist.h /usr/include/error.h
+iomsg.o: /usr/include/errno.h /usr/include/bits/errno.h
+iomsg.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+iomsg.o: /usr/include/asm-generic/errno.h
+iomsg.o: /usr/include/asm-generic/errno-base.h /usr/include/assert.h
+iomsg.o: /usr/include/pthread.h /usr/include/sched.h
+iomsg.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+iomsg.o: /usr/include/string.h ../include/iomsg.h ../include/address.h
+iomsg.o: ../include/common.h ../include/management_addr.h ../include/comm.h
+iomsg.o: /usr/include/sys/uio.h /usr/include/bits/uio.h ../include/trains.h
+iomsg.o: ../include/applicationMessage.h ../include/msg.h ../include/wagon.h
+iomsg.o: ../include/bqueue.h /usr/include/semaphore.h
+iomsg.o: /usr/include/bits/semaphore.h ../include/list.h
+iomsg.o: ../include/advanced_struct.h ../include/connect.h
+stateMachine.o: /usr/include/stdio.h /usr/include/features.h
+stateMachine.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+stateMachine.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+stateMachine.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+stateMachine.o: /usr/include/libio.h /usr/include/_G_config.h
+stateMachine.o: /usr/include/wchar.h /usr/include/bits/stdio_lim.h
+stateMachine.o: /usr/include/bits/sys_errlist.h /usr/include/time.h
+stateMachine.o: ../include/stateMachine.h /usr/include/stdlib.h
+stateMachine.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+stateMachine.o: /usr/include/endian.h /usr/include/bits/endian.h
+stateMachine.o: /usr/include/bits/byteswap.h /usr/include/bits/byteswap-16.h
+stateMachine.o: /usr/include/xlocale.h /usr/include/sys/types.h
+stateMachine.o: /usr/include/sys/select.h /usr/include/bits/select.h
+stateMachine.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+stateMachine.o: /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h
+stateMachine.o: /usr/include/alloca.h /usr/include/bits/stdlib-float.h
+stateMachine.o: /usr/include/errno.h /usr/include/bits/errno.h
+stateMachine.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+stateMachine.o: /usr/include/asm-generic/errno.h
+stateMachine.o: /usr/include/asm-generic/errno-base.h /usr/include/error.h
+stateMachine.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+stateMachine.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
+stateMachine.o: /usr/include/getopt.h ../include/trains.h ../include/common.h
+stateMachine.o: /usr/include/pthread.h /usr/include/sched.h
+stateMachine.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+stateMachine.o: ../include/address.h ../include/applicationMessage.h
+stateMachine.o: ../include/iomsg.h ../include/management_addr.h
+stateMachine.o: ../include/comm.h /usr/include/sys/uio.h
+stateMachine.o: /usr/include/bits/uio.h ../include/msg.h
+stateMachine.o: /usr/include/assert.h ../include/wagon.h ../include/bqueue.h
+stateMachine.o: /usr/include/semaphore.h /usr/include/bits/semaphore.h
+stateMachine.o: ../include/list.h ../include/advanced_struct.h
+stateMachine.o: ../include/connect.h ../include/signalArrival.h
+stateMachine.o: ../include/interface.h ../include/counter.h
+management_addr.o: /usr/include/stdlib.h /usr/include/features.h
+management_addr.o: /usr/include/stdc-predef.h /usr/include/sys/cdefs.h
+management_addr.o: /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h
+management_addr.o: /usr/include/bits/waitflags.h
+management_addr.o: /usr/include/bits/waitstatus.h /usr/include/endian.h
+management_addr.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+management_addr.o: /usr/include/bits/types.h /usr/include/bits/typesizes.h
+management_addr.o: /usr/include/bits/byteswap-16.h /usr/include/xlocale.h
+management_addr.o: /usr/include/sys/types.h /usr/include/time.h
+management_addr.o: /usr/include/sys/select.h /usr/include/bits/select.h
+management_addr.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+management_addr.o: /usr/include/sys/sysmacros.h
+management_addr.o: /usr/include/bits/pthreadtypes.h /usr/include/alloca.h
+management_addr.o: /usr/include/bits/stdlib-float.h /usr/include/string.h
+management_addr.o: /usr/include/stdio.h /usr/include/libio.h
+management_addr.o: /usr/include/_G_config.h /usr/include/wchar.h
+management_addr.o: /usr/include/bits/stdio_lim.h
+management_addr.o: /usr/include/bits/sys_errlist.h /usr/include/assert.h
+management_addr.o: /usr/include/errno.h /usr/include/bits/errno.h
+management_addr.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+management_addr.o: /usr/include/asm-generic/errno.h
+management_addr.o: /usr/include/asm-generic/errno-base.h
+management_addr.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+management_addr.o: /usr/include/bits/environments.h
+management_addr.o: /usr/include/bits/confname.h /usr/include/getopt.h
+management_addr.o: ../include/management_addr.h ../include/comm.h
+management_addr.o: /usr/include/pthread.h /usr/include/sched.h
+management_addr.o: /usr/include/bits/sched.h /usr/include/bits/setjmp.h
+management_addr.o: /usr/include/sys/uio.h /usr/include/bits/uio.h
+management_addr.o: ../include/common.h /usr/include/error.h
+management_addr.o: ../include/trains.h ../include/address.h
+management_addr.o: ../include/applicationMessage.h
