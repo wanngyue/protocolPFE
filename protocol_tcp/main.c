@@ -14,19 +14,16 @@
 #include <stddef.h>      // For offsetof
 #define  ERROR_AT_LINE error_at_line
 // End MAJ MSC
-
 #include	"type.h"
-
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
 #include "bqueue.h"
-
-#include "vector_tcp.h"
+#include "vector.h"
 
 #define MAX_NODES 	5
 #define STRING_SIZE		1024
 #define	DELIMITER ' '
+#define ACK_SIZE 15
 
 typedef struct node_info_t {
 	typId self_id;
@@ -131,18 +128,15 @@ int main(int argc, char ** argv) {
 	if(config_sample->self_id == 0){
 		printf("sleeping... %d s\n",interval_preparation);
 		sleep(interval_preparation);
-		//printf("message ok is sending\n");
 		start_leader();
 		printf("warming up... %d s\n",interval_warmingUp);
 		sleep(interval_warmingUp);
-		//start timer
 		if (gettimeofday(&timeBegin, NULL ) < 0){
 		    ERROR_AT_LINE(EXIT_FAILURE, errno, __FILE__, __LINE__, "gettimeofday");
 		}
 		mesurement_started = 1;
 		printf("waiting... %d s\n",interval_mesure);
 		sleep(interval_mesure);
-		//stop timer
 		if (gettimeofday(&timeEnd, NULL ) < 0){
 		    ERROR_AT_LINE(EXIT_FAILURE, errno, __FILE__, __LINE__, "gettimeofday");
 		}
@@ -153,8 +147,6 @@ int main(int argc, char ** argv) {
 		stop_leader();
 	}
 	(void)pthread_join (th1, &ret);
-	//(void)pthread_join (th2, &ret);
-	//(void)pthread_join (th3, &ret);
 	if(config_sample->self_id == 0){
 		printf("==============================\n");
 		printf("TOTAL_TIME_MESUREMENT(ms): %f\n", measure_time_difference(timeEnd, timeBegin));
@@ -193,7 +185,7 @@ void parse_config_file(typId self_id, const char * config_file_name, int num_nod
 	config_sample->num_nodes = num_nodes;
 
 	get_ip_port(config_file_name, config_sample);
-
+	printf("creating ring ... \n");
 	create_ring();// create a server and then create a client
 	//printf("create ring ... OK\n");
 }
@@ -287,6 +279,10 @@ void create_tcp_server_socket_for_predecessor() {
 		setTCP_NODELAY(config_sample->self_sid);
 		// End MAJ MSC
 	}
+	//int sockbufsize = 0; int size1 = sizeof(int);
+	//getsockopt(config_sample->self_sid, SOL_SOCKET, SO_RCVBUF,
+	//(char *)&sockbufsize, &size1);
+	//printf("buffer size socket=%d\n", sockbufsize);
 }
 void create_tcp_client_socket_for_successor(){
 	typId id_succ;
@@ -339,7 +335,6 @@ void initialize(){
 	conf_bits = ((1 << config_sample->num_nodes) - 1) & ~(1 << config_sample->self_id);
 
 	// Begin MAJ MSC
-	//len_head_bcast = sizeof(int) + sizeof(char) + sizeof(typId) + sizeof(int) + sizeof(int);
 	len_head_bcast = offsetof(bcast, startMiliSeconds);
 	// End MAJ MSC
 
@@ -410,7 +405,6 @@ void *process_msg (void * arg){
 			}
 		}
 	}
-
 	pthread_exit (0);
 }
 void *send_msg (void * arg){
@@ -429,6 +423,7 @@ void *send_msg (void * arg){
 			ack_num++;
 			ack *ack_new = prepare_ack(msg_sample->id_process, msg_sample->seq, ack_num);
 			broadcast_ack(config_sample->successor_sid, ack_new);
+			free(ack_new);
 			#ifdef TRACES
 				printf("Ack  [id=%d seq=%d rev=%d] ->\n",ack_new->id_process, ack_new->seq, ack_new->revNum);
 			#endif
@@ -443,35 +438,34 @@ void *send_msg (void * arg){
 void *deliver_msg (void * arg){
 	int c_t = 0;
 	while(1){
-		c_t++;
-		msg_info *m = (msg_info *)bqueueDequeue(deliveryQueue);
-	#ifdef TRACES
-		printf("Delivery <message N°%d from processus %d>%d\n", m->message->seq, m->message->id_process,c_t);
-	#endif
-	if(mesurement_started){
+			c_t++;
+			msg_info *m = (msg_info *)bqueueDequeue(deliveryQueue);
+		#ifdef TRACES
+			printf("Delivery <message N°%d from processus %d>%d\n", m->message->seq, m->message->id_process,c_t);
+		#endif
+		if(mesurement_started){
 
-	  // Begin MAJ MSC
-	  if (m->message->id_process == config_sample->self_id) {
-	    // This process is the sender of this message to deliver.
-	    // ==> We can compare our clock and the clock stored in the message
-	    double lat = get_mili_seconds() - m->message->startMiliSeconds;
-	    counters_sample.delivered_latency += lat;
-	    counters_sample.messages_delivered_mesure++;
-	   	counters_sample.messages_bytes_delivered_mesure += m->message->len - len_head_bcast;
-	  }
-	  // End MAJ MSC
-	  counters_sample.messages_delivered++;
-	  counters_sample.messages_bytes_delivered += m->message->len - len_head_bcast;
-	}
-	free(m->message);
-	m->message = NULL;
-	free(m);
-	m = NULL;
+		  // Begin MAJ MSC
+		  if (m->message->id_process == config_sample->self_id) {
+			// This process is the sender of this message to deliver.
+			// ==> We can compare our clock and the clock stored in the message
+			double lat = get_mili_seconds() - m->message->startMiliSeconds;
+			counters_sample.delivered_latency += lat;
+			counters_sample.messages_delivered_mesure++;
+			counters_sample.messages_bytes_delivered_mesure += m->message->len - len_head_bcast;
+		  }
+		  // End MAJ MSC
+		  counters_sample.messages_delivered++;
+		  counters_sample.messages_bytes_delivered += m->message->len - len_head_bcast;
+		}
+			free(m->message);
+			m->message = NULL;
+			free(m);
+			m = NULL;
 	}
 	pthread_exit (0);
 }
 void broadcast_msg(int dest, bcast *message){
-
 	int status = send(dest, message, message->len, MSG_WAITALL);
 	assert(status == message->len);
 }
@@ -495,8 +489,8 @@ void broadcast_ack(int successor_sid,ack *new_ack){
 
 }
 ack * prepare_ack(typId id,int sequence_number,int recv_number){
-	ack *new_ack = (ack*) malloc(sizeof(ack));
-	new_ack->len = sizeof(ack);
+	ack *new_ack =  malloc(ACK_SIZE);
+	new_ack->len = ACK_SIZE;
 	new_ack->type = 'a';
 	new_ack->id_process = id;
 	new_ack->seq = sequence_number;
@@ -514,18 +508,22 @@ void transfer_ack(config_info *config, ack *acknowledge){
 	assert(status == acknowledge->len);
 }
 void start_leader(){
-	ok *ok_var = (ok*)malloc(sizeof(ok)) ;
+	ok *ok_var = malloc(sizeof(ok)) ;
 	ok_var->len = sizeof(ok);
 	ok_var->type = 'y';
 	int status = send(config_sample->successor_sid, ok_var, ok_var->len, MSG_WAITALL);
 	assert(status == ok_var->len);
+	free(ok_var);
+	ok_var = NULL;
 }
 void stop_leader(){
-	ok *ok_var = (ok*)malloc(sizeof(ok)) ;
+	ok *ok_var = malloc(sizeof(ok)) ;
 	ok_var->len = sizeof(ok);
 	ok_var->type = 'n';
 	int status = send(config_sample->successor_sid, ok_var, ok_var->len, MSG_WAITALL);
 	assert(status == ok_var->len);
+	free(ok_var);
+	ok_var = NULL;
 }
 void handle_msg(config_info * config, bcast *recv_msg){
 
@@ -551,7 +549,7 @@ void handle_msg(config_info * config, bcast *recv_msg){
 		ack_num++;// = rev_num;
 		ack *ack_new = prepare_ack(recv_msg->id_process, recv_msg->seq, ack_num);
 		broadcast_ack(config->successor_sid, ack_new);
-
+		free(ack_new);
 		#ifdef TRACES
 		printf("Ack  [id=%d seq=%d rev=%d] ->\n",ack_new->id_process, ack_new->seq, ack_new->revNum);
 		#endif
@@ -580,7 +578,6 @@ void handle_ack(config_info * config, ack *recv_ack){
 			#endif
 		}
 	}
-
 }
 typId get_predecessor(typId p_id) {
 
@@ -603,14 +600,11 @@ typId get_pre_predecessor(typId p_id) {
 }
 void save_msg_in_vector_ack( bcast *message){
 	msg_info *msg_inf = malloc(sizeof(msg_info));
-	//sg_inf->message = *message;
 	msg_inf->message = message;
-	msg_inf->bits = conf_bits;//001111
+	msg_inf->bits = conf_bits;
 
 	int status;
-	//printf("elt addingin vector ack \n");
 	status = addElt(msg_inf, vector_ack);
-	//printf("elt added in vector ack\n");
 	assert(status == 1);
 
 }
@@ -619,9 +613,8 @@ void move_msg_in_vector_ack(config_info *config, ack *acknowledge){
 	typId message_id = acknowledge->id_process;
 	msg_info *msg_inf = (msg_info *)malloc(sizeof(msg_info));
 	msg_inf->message = removeFirst(vector_no_ack[message_id]);
-	msg_inf->bits = conf_bits;//001111
+	msg_inf->bits = conf_bits;
 
-	//printf("////////// Transfer %d/%d\n", msg_inf->message->id_process, msg_inf->message->seq);
 
 	status = addElt(msg_inf, vector_ack);
 	assert(status == 1);
@@ -634,27 +627,19 @@ void save_msg_in_vector_No_ack( bcast *message){
 	assert(status == 1);
 }
 void update_vector(bcast *message){
-	//printf("up \n");
 	typId id = message->id_process;
 	int ack_tmp = message->ack;
 	int i;
 	// Begin MAJ MSC
 	for (i = 0 ; i < numberOfElt(vector_ack) ; i++) {
-		//printf("manip (%d,%d)",elt_tmp,( (msg_info *)   (elementAt(elt_tmp, vector_ack)) )->message.seq);
 		msg_info *m = (msg_info *)   (elementAt(i, vector_ack));
-		//printf("i = %d | highest = %d | ack_tmp = %d\n", i, highestDelivered, ack_tmp);
 		if (i + highestDelivered <= ack_tmp) {
 		  m->bits &= ~(1 << id);
-		  //printf("=== apres %d, sur %d/%d, m->bits = %04x\n", id, m->message->id_process, m->message->seq, m->bits);
 		}
 	}
 	// End MAJ MSC
-	//printf("nbElt = %d\n",vector_ack->nbElt);
-	//printf("%d\n",((msg_info *)(elementAt(0, vector_ack)))->bits);
 	while (numberOfElt(vector_ack)>0 && (((msg_info *)(elementAt(0, vector_ack)))->bits == 0)) {
 	  msg_info *m = removeFirst(vector_ack);
-	  //double lat = get_mili_seconds() - m->message->startMiliSeconds;
-	  //printf("NbElet / Latency = %d / %g\n", numberOfElt(vector_ack), lat);
 	  bqueueEnqueue(deliveryQueue, m);
 	  highestDelivered++;
 	}

@@ -13,7 +13,6 @@ typedef struct bcast_t {
 typedef struct ack_t {
 	char type;//'a'
 	typId id_process;
-	typId id_source;
 	int seq;
 	int revNum;
 }  __attribute__((packed)) ack;
