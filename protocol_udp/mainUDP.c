@@ -19,39 +19,37 @@
 
 #include 	"bqueue.h"
 
-#include 	"vector_udp.h"
+#include 	"vector.h"
 
 #define MAX_NODES 	5
 #define STRING_SIZE		1024
-#define	DELIMITER ' '
 #define MIN_PORT 1024    /* minimum port allowed for multicast */
 #define MAX_PORT 65535   /* maximum port allowed for multicast*/
-#define MAX_LEN  1024    /* maximum string size to multicast */
-
+#define MAX_LEN  6012    /* maximum string size to multicast */
+#define ACK_SIZE 11
 typedef struct config_info_t {
 	typId self_id;
 	int num_nodes;
 	int self_sid;
-	char IP[16];
-	int port;
 } config_info;
+
 typedef struct message_info_t{
 	int bits;
 	mcast *message;
-} msg_info;
+} __attribute__((packed))msg_info;
 
 typedef struct counters_t {
 	long messages_delivered;
 	long messages_bytes_delivered;
+	long messages_delivered_mesure;
+	long messages_bytes_delivered_mesure;
 	double delivered_latency;
 }counters;
 
 void validate_input_parameters(int argc, char **argv);
-void parse_config_file(typId self_id, const char * config_file_name, int num_nodes);
-void get_ip_port(const char* config_file1, config_info * config);
+void parse_config_file(typId self_id, int num_nodes);
 void create_multicast_socket(config_info *config);
 void initialize();
-int get_substr(int start_index, int end_index, char * source, char * result_to_return);
 void start_leader();
 void stop_leader();
 
@@ -62,9 +60,9 @@ void *deliver_msg (void * arg);
 mcast *prepare_msg(typId id,int sequence_number,int acknowledge_number);
 void multicast_msg( mcast *message);
 void save_msg_in_vector_ack( mcast *message);
-//void update_vector(mcast *message);
-void update_vector(typId id, int ack_number);
-ack * prepare_ack(typId id_process, typId id_src,int sequence_number,int recv_number);
+void update_vector(mcast *message);
+void update_vector_1(mcast *message);
+ack * prepare_ack(typId id_process,int sequence_number,int recv_number);
 void multicast_ack(ack *new_ack);
 void save_msg_in_vector_No_ack( mcast *message);
 void move_msg_in_vector_ack(config_info *config, ack *acknowledge);
@@ -76,17 +74,15 @@ double get_mili_seconds();
 double calculate_throughput(int bytes, double elapsed_time);
 
 config_info *config_sample;
-char *config_file = "config_file_multicast.dat";
 typId self_id;
 int num_nodes, time_out;
-int interval_preparation, interval_warmingUp, interval_mesure, interval_stop, total_size, ack_size = 13;
+int interval_preparation, interval_warmingUp, interval_mesure, interval_stop, total_size, ack_size = ACK_SIZE;
 int conf_bits, prep_bits;
 
 pthread_t th1, th2, th3;
 void *ret;
 static sem_t my_sem;
 
-struct sockaddr_in mc_addr; /* socket address structure */
 int mesurement_started = 0;
 struct timeval timeBegin, timeEnd;
 int seq_num, ack_num;
@@ -99,12 +95,17 @@ trBqueue *deliveryQueue;
 int test_started = 0;
 int highestDelivered = 0;
 
+char* mc_addr_str = "239.255.0.0";
+int mc_port = 4321;
+struct sockaddr_in mc_addr; /* socket address structure */
+
 int main(int argc, char ** argv) {
 
 	validate_input_parameters(argc, argv);
-	parse_config_file(self_id, config_file, num_nodes);
+	parse_config_file(self_id, num_nodes);
+	create_multicast_socket(config_sample);
+	printf("create socket for multicasting ... OK\n");
 	initialize();
-
 	sem_init(&my_sem, 0, 0);
 	if (pthread_create (&th1, NULL, process_msg, "1") < 0) {
 		fprintf (stderr, "pthread_create error for thread 1\n");
@@ -145,8 +146,9 @@ int main(int argc, char ** argv) {
 	if(config_sample->self_id == 0){
 			printf("==============================\n");
 			printf("TOTAL_TIME_MESUREMENT(ms): %f\n", measure_time_difference(timeEnd, timeBegin));
-			printf("MESSAGES_DELIVERED: %ld\nBYTES_DELIVERED: %ld\nDELIVERED_LATENCY(ms): %f\n", counters_sample.messages_delivered, counters_sample.messages_bytes_delivered, counters_sample.delivered_latency/counters_sample.messages_delivered);
-			printf("THROUGHPUT: %f(Mbps)\n",calculate_throughput(counters_sample.messages_bytes_delivered, measure_time_difference(timeEnd, timeBegin)));
+			printf("MESSAGES_DELIVERED: %ld\nBYTES_DELIVERED: %ld\nDELIVERED_LATENCY(ms): %f\n", counters_sample.messages_delivered_mesure,
+					counters_sample.messages_bytes_delivered_mesure, counters_sample.delivered_latency/counters_sample.messages_delivered_mesure);
+			printf("THROUGHPUT: %f(Mbps)\n",calculate_throughput(counters_sample.messages_bytes_delivered_mesure, measure_time_difference(timeEnd, timeBegin)));
 	}
 	return 0;
 }
@@ -175,66 +177,19 @@ void validate_input_parameters(int argc, char **argv) {
 }
 
 
-void parse_config_file(typId self_id, const char * config_file_name, int num_nodes) {
+void parse_config_file(typId self_id, int num_nodes) {
 	config_sample = (config_info*) malloc(sizeof(config_info));
 	config_sample->self_id = self_id;
 	config_sample->num_nodes = num_nodes;
 
-	get_ip_port(config_file_name, config_sample);
-
-	create_multicast_socket(config_sample);// create a server and then create a client
-	printf("create socket for multicasting ... OK\n");
 }
 
-
-void get_ip_port(const char* config_file, config_info * config) {
-
-	FILE * fp;
-	char line[STRING_SIZE];
-	char word[STRING_SIZE];
-	int last_index = -1;
-
-	fp = fopen(config_file, "r");
-	assert(fp != NULL);
-	while (!feof(fp)) {
-		if (fgets(line, STRING_SIZE, fp) != 0) {
-			if(line[0] == '#'){
-				continue;
-			}
-
-			last_index = get_substr(0, strlen(line) - 1, line, word);
-			memcpy(config->IP, word, strlen(word));
-			last_index = get_substr(last_index + 1, strlen(line) - 1, line, word);
-			config->port = atoi(word);
-		}
-	}
-	fclose(fp);
-}
-
-int get_substr(int start_index, int end_index, char * source, char * result_to_return) {
-	int i = 0, j = 0;
-
-	memset(result_to_return, '\0', STRING_SIZE);
-
-	for (i = start_index; i < end_index; i++) {
-		if (source[i] == DELIMITER)
-			break;
-		result_to_return[j] = source[i];
-		j++;
-	}
-	return i;
-}
 void create_multicast_socket(config_info * config){
-	struct sockaddr_in mc_addr; /* socket address structure */
-	char* mc_addr_str;          /* multicast IP address */
-	unsigned short mc_port;     /* multicast port */
 	unsigned char mc_ttl=1;     /* time to live (hop count) */
 	unsigned char loopch=1;     /* we want to receive our own datagram */
 	int flag_on = 1;              /* socket option flag */
 	struct ip_mreq mc_req;        /* multicast request structure */
 
-	mc_addr_str = config->IP;       /* multicast IP address */
-	mc_port     = config->port; /* multicast port number */
 
 	/* validate the port range */
 	if ((mc_port < MIN_PORT) || (mc_port > MAX_PORT)) {
@@ -313,28 +268,23 @@ void initialize(){
 	}
 	vector_ack = createVector(5000);
 
-	/* construct a multicast address structure */
-	memset(&mc_addr, 0, sizeof(mc_addr));
-	mc_addr.sin_family      = AF_INET;
-	mc_addr.sin_addr.s_addr = inet_addr(config_sample->IP);
-	mc_addr.sin_port        = htons(config_sample->port);
-
-	counters_sample.delivered_latency = 0;
+	counters_sample.delivered_latency = 0.0;
 	counters_sample.messages_bytes_delivered = 0;
 	counters_sample.messages_delivered = 0;
+	counters_sample.messages_bytes_delivered_mesure = 0;
+	counters_sample.messages_delivered_mesure = 0;
 	deliveryQueue = newBqueue();
 }
 void *process_msg (void * arg){
-	char recv_buf[MAX_LEN];     /* buffer to receive string */
-	int recv_len;                 /* length of string received */
-	struct sockaddr_in from_addr; /* packet source */
-	unsigned int from_len ;        /* source addr length */
-	int sign = 0;
 
 	while(1){
+		char *recv_buf = malloc(MAX_LEN);     /* buffer to receive string */
+		int recv_len;                 /* length of string received */
+		int sign = 0;
+
 		/* block waiting to receive a packet */
 		if ((recv_len = recvfrom(config_sample->self_sid, recv_buf, MAX_LEN, 0,
-			 (struct sockaddr*)&from_addr, &from_len)) < 0) {
+			NULL, NULL)) < 0) {
 		  perror("recvfrom() failed");
 		  exit(1);
 		}
@@ -350,7 +300,8 @@ void *process_msg (void * arg){
 			}
 			case'a':{
 				handle_ack(config_sample, (ack *)recv_buf);
-				//free(recv_buf);
+				free(recv_buf);
+				recv_buf = NULL;
 				break;
 			}
 			case'y':{
@@ -378,30 +329,34 @@ void *process_msg (void * arg){
 						test_started = 1;
 					}
 				}
-				//free(recv_msg);
+				free(recv_buf);
+				recv_buf = NULL;
 				break;
 			}
 			case'z':{
 				if(config_sample->self_id == 0){
 					update_prepare_bits(recv_buf[1] - '0');
 				}
-				//free(recv_msg);
+				free(recv_buf);
 				break;
 			}
 			case'n':{
-				//free(recv_msg);
+				free(recv_buf);
+				recv_buf = NULL;
 				pthread_exit (0);
 				break;
 			}
 			case'c':{
-				//free(recv_msg);
 				sem_post(&my_sem);
+				free(recv_buf);
+				recv_buf = NULL;
 				break;
 			}
 			default:{
 				printf("Unexpected message type received : %d\n", recv_buf[0]);
+				free(recv_buf);
+				recv_buf = NULL;
 			}
-
 		}
 	}
 	pthread_exit (0);
@@ -416,6 +371,7 @@ void *send_msg (void * arg){
 		printf("Multicast [id=%d seq=%d ack=%d] ->\n",config_sample->self_id,seq_num,ack_num);
 		#endif
 		multicast_msg(msg_sample);
+		free(msg_sample);
 		usleep(time_out);
 	}
 	pthread_exit (0);
@@ -437,17 +393,17 @@ void *deliver_msg (void * arg){
 				// ==> We can compare our clock and the clock stored in the message
 				double lat = get_mili_seconds() - m->message->startMiliSeconds;
 				counters_sample.delivered_latency += lat;
+				counters_sample.messages_delivered_mesure++;
+				counters_sample.messages_bytes_delivered_mesure += total_size - len_head_mcast;
 			}
 			// End MAJ MSC
 			counters_sample.messages_delivered++;
 			counters_sample.messages_bytes_delivered += total_size - len_head_mcast;
 		}
-
 		free(m->message);
 		m->message = NULL;
 		free(m);
 		m = NULL;
-
 	}
 
 	pthread_exit (0);
@@ -456,14 +412,16 @@ void update_prepare_bits(int id){
 	prep_bits &= ~(1 << id);
 }
 mcast *prepare_msg(typId id,int sequence_number,int acknowledge_number){
+
 	mcast *new_msg = malloc(total_size);
+	//printf("sizeof(new_msg) = %d\n",sizeof(new_msg));
 	new_msg->type = 'm';
 	new_msg->id_process = id;
 	new_msg->ack = acknowledge_number;
 	new_msg->seq = sequence_number;
 	// Begin MAJ MSC
-	memset(new_msg->payload,0,total_size-offsetof(mcast,payload));
 	new_msg->startMiliSeconds = get_mili_seconds();
+	memset(new_msg->payload,'0'+9,total_size-offsetof(mcast,payload));
 	// End MAJ MSC
 	return new_msg;
 }
@@ -476,50 +434,86 @@ void multicast_msg(mcast *message){
 }
 void save_msg_in_vector_ack( mcast *message){
 	msg_info *msg_inf = malloc(sizeof(msg_info));
+	//printf("mcast before save in vector msg id = %d, msg seq = %d\n",message->id_process,message->seq);
 	msg_inf->message = message;
 	msg_inf->bits = conf_bits;
-
 	int status;
 	status = addElt(msg_inf, vector_ack);
+	/*
+	int i;
+	printf("print all the Elt in the vector\n");
+	for(i = 0; i < numberOfElt(vector_ack); i++){
+		printf("***N°%d id=%d seq=%d\n",i,( (msg_info *)elementAt(i, vector_ack) )->message->id_process,
+				( (msg_info *)   (elementAt(i, vector_ack)) )->message->seq);
+	}
 	printf("mcast saved in vector msg id = %d, msg seq = %d\n",msg_inf->message->id_process,msg_inf->message->seq);
+	*/
 	assert(status == 1);
-
 }
-void update_vector(typId id_process, int ack_number){
-	typId id_t = id_process;
-	int ack_tmp = ack_number;
+void update_vector(mcast *message){
+	//printf("up \n");
+	typId id = message->id_process;
+	int ack_tmp = message->ack;
 	int i;
 	// Begin MAJ MSC
 	for (i = 0 ; i < numberOfElt(vector_ack) ; i++) {
-		//printf("manip (%d,%d)\n",ack_tmp,( (msg_info *)   (elementAt(i, vector_ack)) )->message->seq);
-		msg_info *m = (msg_info *)   (elementAt(i, vector_ack));
+		msg_info *m = (msg_info *) elementAt(i, vector_ack);
+		//printf("manip (%d,%d) i =%d\n",( (msg_info *)elementAt(i, vector_ack) )->message->id_process,
+			//	( (msg_info *)   (elementAt(i, vector_ack)) )->message->seq, i);
+
 		//printf("i = %d | highest = %d | ack_tmp = %d\n", i, highestDelivered, ack_tmp);
-		if (i + highestDelivered < ack_tmp) {
-			printf("=== avant %d, sur %d/%d, m->bits = %04x\n", id_t, m->message->id_process, m->message->seq, m->bits);
-			m->bits &= ~(1 << id_t);
-			printf("=== apres %d, sur %d/%d, m->bits = %04x\n", id_t, m->message->id_process, m->message->seq, m->bits);
+		if (i + highestDelivered <= ack_tmp) {
+		  m->bits &= ~(1 << id);
+		  //printf("=== apres %d, sur %d/%d, m->bits = %04x\n", id, m->message->id_process, m->message->seq, m->bits);
 		}
 	}
 	// End MAJ MSC
-	while (numberOfElt(vector_ack)>0 && ((msg_info *)(elementAt(0, vector_ack)))->bits == 0) {
-	  msg_info *m = removeFirst(vector_ack);
-	  double lat = get_mili_seconds() - m->message->startMiliSeconds;
-	  printf("NbElet / Latency = %d / %g and message id = %d and seq num = %d\n", numberOfElt(vector_ack), lat,m->message->id_process,m->message->seq);
+	while (numberOfElt(vector_ack)>0 && (((msg_info *)(elementAt(0, vector_ack)))->bits == 0)) {
+	  msg_info *m = (msg_info *)removeFirst(vector_ack);
+	  //double lat = get_mili_seconds() - m->message->startMiliSeconds;
+	  //printf("NbElet / Latency = %d / %g\n", numberOfElt(vector_ack), lat);
 	  bqueueEnqueue(deliveryQueue, m);
 	  highestDelivered++;
 	}
+
 }
-ack *prepare_ack(typId id_process, typId id_source,int sequence_number,int recv_number){
-	ack *new_ack = (ack*) malloc(sizeof(ack));
+void update_vector_1(mcast *message){
+	//printf("up \n");
+	typId id = message->id_process;
+	int ack_tmp = message->ack;
+	int i;
+	// Begin MAJ MSC
+	for (i = 0 ; i < numberOfElt(vector_ack) ; i++) {
+		msg_info *m = (msg_info *)   (elementAt(i, vector_ack));
+		//printf("manip (%d,%d)\n",( (msg_info *)   (elementAt(i, vector_ack)) )->message->id_process,( (msg_info *)   (elementAt(i, vector_ack)) )->message->seq);
+		//printf("i = %d | highest = %d | ack_tmp = %d\n", i, highestDelivered, ack_tmp);
+		if (i + highestDelivered < ack_tmp) {
+		  m->bits &= ~(1 << id);
+		  //printf("=== apres %d, sur %d/%d, m->bits = %04x\n", id, m->message->id_process, m->message->seq, m->bits);
+		}
+	}
+	// End MAJ MSC
+	//printf("nbElt = %d\n",vector_ack->nbElt);
+	//printf("%d\n",((msg_info *)(elementAt(0, vector_ack)))->bits);
+	while (numberOfElt(vector_ack)>0 && (((msg_info *)(elementAt(0, vector_ack)))->bits == 0)) {
+	  msg_info *m = removeFirst(vector_ack);
+	  //double lat = get_mili_seconds() - m->message->startMiliSeconds;
+	  //printf("NbElet / Latency = %d / %g\n", numberOfElt(vector_ack), lat);
+	  bqueueEnqueue(deliveryQueue, m);
+	  highestDelivered++;
+	}
+
+}
+ack *prepare_ack(typId id_process,int sequence_number,int recv_number){
+	ack *new_ack = malloc(ack_size);
 	new_ack->type = 'a';
 	new_ack->id_process = id_process;
-	new_ack->id_source = id_source;
 	new_ack->seq = sequence_number;
 	new_ack->revNum = recv_number;
 	return new_ack;
 }
 void multicast_ack(ack *new_ack){
-	if ((sendto(config_sample->self_sid, (char *)new_ack, ack_size, 0,
+	if ((sendto(config_sample->self_sid, new_ack, ack_size, 0,
 		   (struct sockaddr *) &mc_addr, sizeof(mc_addr))) != ack_size) {
 
 			perror("sendto() multicast ack\n");
@@ -533,7 +527,6 @@ void save_msg_in_vector_No_ack( mcast *message){
 	assert(status == 1);
 }
 void handle_msg(config_info * config, mcast *recv_msg){
-
 	typId self_id = config->self_id;
 
 	#ifdef TRACES
@@ -541,36 +534,40 @@ void handle_msg(config_info * config, mcast *recv_msg){
 	#endif
 
 	if(self_id == 0){
-		ack_num++;// = rev_num;
-		save_msg_in_vector_ack(recv_msg);
-		ack *ack_new = prepare_ack(self_id, recv_msg->id_process, recv_msg->seq, ack_num);
+		if(recv_msg->id_process != self_id){
+			update_vector_1(recv_msg);
+			save_msg_in_vector_ack(recv_msg);
+		}else{
+			save_msg_in_vector_ack(recv_msg);
+			update_vector(recv_msg);
+		}
+
+		ack_num++;
+		ack *ack_new = prepare_ack(recv_msg->id_process, recv_msg->seq, ack_num);
 		multicast_ack(ack_new);
 		#ifdef TRACES
-		printf("Ack [id=%d seq=%d rev=%d] ->\n",ack_new->id_source, ack_new->seq, ack_new->revNum);
+		printf("Ack  [id=%d seq=%d rev=%d] ->\n",ack_new->id_process, ack_new->seq, ack_new->revNum);
 		#endif
+		free(ack_new);
 	}else{
-		save_msg_in_vector_No_ack(recv_msg);
+			save_msg_in_vector_No_ack(recv_msg);
+			update_vector(recv_msg);
 	}
 }
 void handle_ack(config_info * config, ack *recv_ack){
 
 	typId self_id = config->self_id;
 	#ifdef TRACES
-	printf("<- recv_ack [id=%d seq=%d rev=%d]\n",recv_ack->id_source, recv_ack->seq, recv_ack->revNum);
+	printf("<- recv_ack [id=%d seq=%d rev=%d]\n",recv_ack->id_process, recv_ack->seq, recv_ack->revNum);
 	#endif
-	if(self_id != 0){
-		if(recv_ack->id_process == 0){
-			move_msg_in_vector_ack(config, recv_ack);
-			ack_num = recv_ack->revNum;
-		}else if(recv_ack->id_process == self_id){
-			printf("update in handle ack\n");
-			update_vector(recv_ack->id_source, recv_ack->revNum);
-		}
-	}else{
-		printf("update in handle ack ack\n");
-		update_vector(recv_ack->id_source, recv_ack->revNum);
-	}
 
+	if(self_id != 0){
+		// Only a non-leader has to do something
+		move_msg_in_vector_ack(config, recv_ack);
+		// Begin MAJ MSC
+		ack_num = recv_ack->revNum;
+		// End MAJ MSC
+	}
 }
 double get_mili_seconds() {
 	struct timeval mtv;
@@ -603,7 +600,7 @@ void start_leader(){
 			perror("sendto() start leader");
 			exit(1);
 		}
-		//usleep(10);
+		usleep(10);
 	}
 	printf("start leader done\n");
 }
@@ -620,14 +617,10 @@ void stop_leader(){
 }
 void move_msg_in_vector_ack(config_info *config, ack *acknowledge){
 	int status;
-	typId message_id = acknowledge->id_source;
+	typId message_id = acknowledge->id_process;
 	msg_info *msg_inf = (msg_info *)malloc(sizeof(msg_info));
-	//((mcast *)elementAt(vector_no_ack[message_id]->rgFirstElt, vector_no_ack[message_id]));
-	//printf("msg test in vector id = %d, seq = %d\n",((mcast *)elementAt(vector_no_ack[message_id]->rgFirstElt, vector_no_ack[message_id]))->id_process
-	//		, ((mcast *)elementAt(vector_no_ack[message_id]->rgFirstElt, vector_no_ack[message_id]))->seq);
 	msg_inf->message = removeFirst(vector_no_ack[message_id]);
 	msg_inf->bits = conf_bits;
-	//printf("msg moving in vector id = %d, seq = %d\n",msg_inf->message->id_process, msg_inf->message->seq);
 	status = addElt(msg_inf, vector_ack);
 	//printf("msg moved in vector id = %d, seq = %d\n",msg_inf->message->id_process, msg_inf->message->seq);
 	assert(status == 1);
