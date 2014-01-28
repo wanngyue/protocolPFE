@@ -13,12 +13,13 @@
 #define  ERROR_AT_LINE error_at_line
 
 #include	"type.h"
-
 #include 	<netinet/in.h>
 #include 	<arpa/inet.h>
-
 #include 	"bqueue.h"
+<<<<<<< HEAD
 
+=======
+>>>>>>> a081a36ab73673efe87c8b3642fc6324ee1eb8b4
 #include 	"vector.h"
 
 #define MAX_NODES 	5
