@@ -13,19 +13,16 @@
 #define  ERROR_AT_LINE error_at_line
 
 #include	"type.h"
-
 #include 	<netinet/in.h>
 #include 	<arpa/inet.h>
-
 #include 	"bqueue.h"
-
 #include 	"vector.h"
 
 #define MAX_NODES 	5
 #define STRING_SIZE		1024
 #define MIN_PORT 1024    /* minimum port allowed for multicast */
 #define MAX_PORT 65535   /* maximum port allowed for multicast*/
-#define MAX_LEN  6012    /* maximum string size to multicast */
+#define MAX_LEN  10000    /* maximum string size to multicast */
 #define ACK_SIZE 11
 typedef struct config_info_t {
 	typId self_id;
@@ -252,6 +249,15 @@ void create_multicast_socket(config_info * config){
 		perror("setsockopt() failed");
 		exit(1);
 	}
+	/*int sockbufsize = 0; int size1 = sizeof(int);
+	getsockopt(config->self_sid, SOL_SOCKET, SO_RCVBUF,
+		(char *)&sockbufsize, &size1);
+	printf("RECV buffer size socket=%d\n", sockbufsize);
+	getsockopt(config->self_sid, SOL_SOCKET, SO_SNDBUF,
+			(char *)&sockbufsize, &size1);
+	printf("SEND buffer size socket=%d\n", sockbufsize);
+	*/
+
 }
 void initialize(){
 
@@ -278,12 +284,12 @@ void initialize(){
 void *process_msg (void * arg){
 
 	while(1){
-		char *recv_buf = malloc(MAX_LEN);     /* buffer to receive string */
+		char *recv_buf = malloc(total_size);     /* buffer to receive string */
 		int recv_len;                 /* length of string received */
 		int sign = 0;
 
 		/* block waiting to receive a packet */
-		if ((recv_len = recvfrom(config_sample->self_sid, recv_buf, MAX_LEN, 0,
+		if ((recv_len = recvfrom(config_sample->self_sid, recv_buf, total_size, 0,
 			NULL, NULL)) < 0) {
 		  perror("recvfrom() failed");
 		  exit(1);
@@ -338,6 +344,7 @@ void *process_msg (void * arg){
 					update_prepare_bits(recv_buf[1] - '0');
 				}
 				free(recv_buf);
+				recv_buf = NULL;
 				break;
 			}
 			case'n':{
@@ -469,13 +476,12 @@ void update_vector(mcast *message){
 	}
 	// End MAJ MSC
 	while (numberOfElt(vector_ack)>0 && (((msg_info *)(elementAt(0, vector_ack)))->bits == 0)) {
-	  msg_info *m = (msg_info *)removeFirst(vector_ack);
+	  msg_info *m = removeFirst(vector_ack);
 	  //double lat = get_mili_seconds() - m->message->startMiliSeconds;
 	  //printf("NbElet / Latency = %d / %g\n", numberOfElt(vector_ack), lat);
 	  bqueueEnqueue(deliveryQueue, m);
 	  highestDelivered++;
 	}
-
 }
 void update_vector_1(mcast *message){
 	//printf("up \n");
